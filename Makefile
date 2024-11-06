@@ -1,6 +1,6 @@
 CC = g++
 CFLAGS = -shared  -DUNICODE -std=c++11
-LDFLAGS = -Wl,--kill-at  -luuid
+LDFLAGS = -Wl,--kill-at  -luuid -lole32
 
 TARGET = descript.ion-shellex.dll
 SRCS = dll_main.cpp

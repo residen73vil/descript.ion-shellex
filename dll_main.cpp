@@ -33,32 +33,74 @@ public:
 // Implement the COM Class
 class SimpleComClass : public ISimpleComClass {
 public:
+  TCHAR m_szFile[MAX_PATH];
+public:
 	SimpleComClass() : refCount(1) {}
 	
- HRESULT __stdcall Initialize(LPCITEMIDLIST pidlFolder, IDataObject* pDataObj, HKEY hKeyProgID) override {
+	HRESULT __stdcall Initialize(LPCITEMIDLIST pidlFolder, IDataObject* pDataObj, HKEY hKeyProgID) override {
 		// Initialize your shell extension - store relevant info if needed
-		return S_OK;
+		FORMATETC fmt = { CF_HDROP, NULL, DVASPECT_CONTENT, -1, TYMED_HGLOBAL };
+		STGMEDIUM stg = { TYMED_HGLOBAL };
+		HDROP	hDrop;
+ 
+		// Look for CF_HDROP data in the data object. If there
+	
+		// is no such data, return an error back to Explorer.
+	
+		if ( FAILED( pDataObj->GetData ( &fmt, &stg ) ))
+			return E_INVALIDARG;
+	 
+		// Get a pointer to the actual data.
+	
+		hDrop = (HDROP) GlobalLock ( stg.hGlobal );
+	 
+		// Make sure it worked.
+	
+		if ( NULL == hDrop )
+			return E_INVALIDARG;
+		UINT uNumFiles = DragQueryFile ( hDrop, 0xFFFFFFFF, NULL, 0 );
+		HRESULT hr = S_OK;
+		
+		if ( 0 == uNumFiles )
+			{
+			GlobalUnlock ( stg.hGlobal );
+			ReleaseStgMedium ( &stg );
+			return E_INVALIDARG;
+			}
+	 
+		// Get the name of the first file and store it in our
+	
+		// member variable m_szFile.
+	
+		if ( 0 == DragQueryFile ( hDrop, 0, m_szFile, MAX_PATH ) )
+			hr = E_INVALIDARG;
+	 
+		GlobalUnlock ( stg.hGlobal );
+		ReleaseStgMedium ( &stg );
+	 
+		return hr;
 	}
+	
 	HRESULT __stdcall QueryInterface(REFIID riid, void **ppv) override {
 
 
-	if (riid == IID_IUnknown || riid == IID_ISimpleComClass) {
-		*ppv = static_cast<ISimpleComClass*>(this);
-		AddRef();
-		return NOERROR;
-	}
-	if ( riid == IID_IContextMenu) {
-		*ppv = static_cast<IContextMenu*>(this);
-		 	AddRef();
-			return NOERROR;
-		}
-	if ( riid == IID_IShellExtInit) {
-		*ppv = static_cast<IShellExtInit*>(this);
+		if (riid == IID_IUnknown || riid == IID_ISimpleComClass) {
+			*ppv = static_cast<ISimpleComClass*>(this);
 			AddRef();
 			return NOERROR;
 		}
-		*ppv = nullptr;
-		return E_NOINTERFACE;
+		if ( riid == IID_IContextMenu) {
+			*ppv = static_cast<IContextMenu*>(this);
+			 	AddRef();
+				return NOERROR;
+			}
+		if ( riid == IID_IShellExtInit) {
+			*ppv = static_cast<IShellExtInit*>(this);
+				AddRef();
+				return NOERROR;
+			}
+			*ppv = nullptr;
+			return E_NOINTERFACE;
 	}
 
 	ULONG __stdcall AddRef() override {
@@ -94,7 +136,7 @@ public:
 		}
 
 		if (IS_INTRESOURCE(pici->lpVerb)){ //checking whether lpVerb is a menu offset or a canonical verb (RunAs/Open/Preview etc)
-			MessageBoxA(NULL, "My Command", "Info", MB_OK);
+			MessageBox(NULL, this->m_szFile, L"Info", MB_OK);
 			return S_OK;
 		} else {
 			return E_NOTIMPL; //if lpVerb contains canonical verb, return not implemented
@@ -156,7 +198,7 @@ public:
 
 private:
 	LONG refCount = 1;
-	static LONG lockCount;  // Lock count for the class factory
+	static LONG lockCount;	// Lock count for the class factory
 };
 
 LONG MyClassFactory::lockCount = 0; // Initialize static member
@@ -187,7 +229,7 @@ extern "C" __declspec(dllexport) HRESULT CreateSimpleComClass(ISimpleComClass** 
 }
 
 // DllGetClassObject implementation
-extern "C" __declspec(dllexport)  HRESULT  DllGetClassObject(REFCLSID rclsid, REFIID riid, void **ppv) {
+extern "C" __declspec(dllexport)	HRESULT	DllGetClassObject(REFCLSID rclsid, REFIID riid, void **ppv) {
 	if (rclsid == CLSID_SimpleComClass) {
 		MyClassFactory* factory = new MyClassFactory();
 		return factory->QueryInterface(riid, ppv);
