@@ -5,8 +5,9 @@
 #include <shlguid.h>
 #include <iostream>
 #include "context_menu.h"
+#include "infotip.h"
 
-//Class Factory 
+//Class Factory, part of COM standart
 class ClassFactory : public IClassFactory {
 public:
 	// IUnknown methods
@@ -34,12 +35,21 @@ public:
 
 	// IClassFactory methods
 	HRESULT __stdcall CreateInstance(IUnknown *pUnkOuter, REFIID riid, void **ppv) override {
+		WCHAR buffer[39]; // A GUID string representation is 38 chars + null terminator
+		StringFromGUID2(riid, buffer, sizeof(buffer) / sizeof(WCHAR));
+		MessageBox(NULL, buffer, L"Info", MB_OK);
 		if (pUnkOuter != nullptr) {
 			return CLASS_E_NOAGGREGATION;
 		}
-		ContextMenuComClass *pClass = new ContextMenuComClass();
-
-		return pClass->QueryInterface(riid, ppv);
+		if ( riid == IID_IQueryInfo || riid == IID_IPersistFile){
+			InfoTipClass *pClass = new InfoTipClass();
+			return pClass->QueryInterface(riid, ppv);
+		}
+		if ( riid == IID_IContextMenu || riid == IID_IShellExtInit){
+			ContextMenuComClass *pClass = new ContextMenuComClass();
+			return pClass->QueryInterface(riid, ppv);
+		}
+		return E_NOINTERFACE;
 	}
 
 	HRESULT __stdcall LockServer(BOOL fLock) override {
