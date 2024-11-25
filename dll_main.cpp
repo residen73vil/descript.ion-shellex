@@ -5,13 +5,15 @@
 #include <shlguid.h>
 #include <iostream>
 #include "context_menu.h"
-#include "infotip.h"
+#include "dbg.h"
+
 
 //Class Factory, part of COM standart
 class ClassFactory : public IClassFactory {
 public:
 	// IUnknown methods
 	HRESULT __stdcall QueryInterface(REFIID riid, void **ppv) override {
+		DEBUG_LOG_RIID( L"FactoryQuery:", riid)
 		if (riid == IID_IUnknown || riid == IID_IClassFactory) {
 			*ppv = static_cast<IClassFactory*>(this);
 			AddRef();
@@ -35,15 +37,9 @@ public:
 
 	// IClassFactory methods
 	HRESULT __stdcall CreateInstance(IUnknown *pUnkOuter, REFIID riid, void **ppv) override {
-		WCHAR buffer[39]; // A GUID string representation is 38 chars + null terminator
-		StringFromGUID2(riid, buffer, sizeof(buffer) / sizeof(WCHAR));
-		MessageBox(NULL, buffer, L"Info", MB_OK);
+		DEBUG_LOG_RIID( L"FactoryInstance:", riid)
 		if (pUnkOuter != nullptr) {
 			return CLASS_E_NOAGGREGATION;
-		}
-		if ( riid == IID_IQueryInfo || riid == IID_IPersistFile){
-			InfoTipClass *pClass = new InfoTipClass();
-			return pClass->QueryInterface(riid, ppv);
 		}
 		if ( riid == IID_IContextMenu || riid == IID_IShellExtInit){
 			ContextMenuComClass *pClass = new ContextMenuComClass();
@@ -70,6 +66,9 @@ LONG ClassFactory::lockCount = 0; // Initialize static member
 
 // DLL entry point
 BOOL WINAPI DllMain(HINSTANCE hInstance, DWORD fdwReason, LPVOID lpvReserved) {
+
+    // Set file to output debug log into
+    DEBUG_INIT("c:\\Logs\\dbg.log");
 	return TRUE;
 }
 

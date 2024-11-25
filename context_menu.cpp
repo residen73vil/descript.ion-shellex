@@ -1,4 +1,5 @@
 #include "context_menu.h"
+#include "dbg.h"
 HRESULT __stdcall ContextMenuComClass::Initialize(LPCITEMIDLIST pidlFolder, IDataObject* pDataObj, HKEY hKeyProgID) {
 	// Initialize your shell extension - store relevant info if needed
 	FORMATETC fmt = { CF_HDROP, NULL, DVASPECT_CONTENT, -1, TYMED_HGLOBAL };
@@ -44,7 +45,7 @@ HRESULT __stdcall ContextMenuComClass::Initialize(LPCITEMIDLIST pidlFolder, IDat
 }
 
 HRESULT __stdcall ContextMenuComClass::QueryInterface(REFIID riid, void **ppv) {
-
+	DEBUG_LOG_RIID(L"ObjectQuery:", riid) ;
 
 	if (riid == IID_IUnknown || riid == IID_IContextMenuComClass) {
 		*ppv = static_cast<IContextMenuComClass*>(this);
