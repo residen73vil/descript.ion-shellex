@@ -3,8 +3,9 @@
 #ifdef _DEBUG
 	#include <fstream>
 	extern std::wofstream dbgout;
+	void dbg_open_log_file(const char* log_file);
 	//open log file (must be called somwere in main)
-	#define DEBUG_INIT(log_file) dbgout.open(log_file);
+	#define DEBUG_INIT(log_file) dbg_open_log_file(log_file);
 	//close log file
 	#define DEBUG_CLOSE dbgout.close();
 	//converts riid into a string and print it to the log

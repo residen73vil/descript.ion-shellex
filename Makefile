@@ -3,7 +3,7 @@ CFLAGS = -shared  -DUNICODE -std=c++11
 LDFLAGS = -Wl,--kill-at  -luuid -lole32
 
 # Debug flags
-DEBUG_FLAGS = -D_DEBUG -g
+DEBUG_FLAGS = -D_DEBUG
 # Release flags
 RELEASE_FLAGS =
 

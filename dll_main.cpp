@@ -5,6 +5,7 @@
 #include <shlguid.h>
 #include <iostream>
 #include "context_menu.h"
+#include "property_sheet.h"
 #include "dbg.h"
 
 
@@ -41,6 +42,10 @@ public:
 		if (pUnkOuter != nullptr) {
 			return CLASS_E_NOAGGREGATION;
 		}
+		if ( riid == CLSID_ContextMenuClass  || riid == IID_IUnknown){
+			ContextMenuComClass *pClass = new ContextMenuComClass();
+			return pClass->QueryInterface(riid, ppv);
+		}
 		if ( riid == IID_IContextMenu || riid == IID_IShellExtInit){
 			ContextMenuComClass *pClass = new ContextMenuComClass();
 			return pClass->QueryInterface(riid, ppv);
@@ -66,9 +71,19 @@ LONG ClassFactory::lockCount = 0; // Initialize static member
 
 // DLL entry point
 BOOL WINAPI DllMain(HINSTANCE hInstance, DWORD fdwReason, LPVOID lpvReserved) {
-
-    // Set file to output debug log into
-    DEBUG_INIT("c:\\Logs\\dbg.log");
+    switch (fdwReason) {
+    case DLL_THREAD_ATTACH:
+    case DLL_PROCESS_ATTACH:
+		    // Set file to output debug log into
+    		DEBUG_INIT("c:\\Logs\\dbg.log");
+			DEBUG_LOG( "dllmain", "dll loaded")
+			break;
+    case DLL_THREAD_DETACH:
+    case DLL_PROCESS_DETACH:
+		DEBUG_LOG( "dllmain", "dll unloaded")
+		DEBUG_CLOSE
+        break;
+    }
 	return TRUE;
 }
 
