@@ -2,18 +2,27 @@
 #define DBG_H
 #ifdef _DEBUG
 	#include <fstream>
+	#include <windows.h>
+	extern CRITICAL_SECTION dbg_critical_section;
 	extern std::wofstream dbgout;
 	void dbg_open_log_file(const char* log_file);
 	//open log file (must be called somwere in main)
-	#define DEBUG_INIT(log_file) dbg_open_log_file(log_file);
+	#define DEBUG_INIT(log_file) InitializeCriticalSection(&dbg_critical_section);\
+		EnterCriticalSection(&dbg_critical_section); \
+		dbg_open_log_file(log_file); \
+		LeaveCriticalSection(&dbg_critical_section);
 	//close log file
-	#define DEBUG_CLOSE dbgout.close();
+	#define DEBUG_CLOSE dbgout.close(); DeleteCriticalSection(&dbg_critical_section);
 	//converts riid into a string and print it to the log
     #define DEBUG_LOG_RIID(where_from, riid) WCHAR buffer[39]; \
 		StringFromGUID2(riid, buffer, sizeof(buffer) / sizeof(WCHAR)); \
-		dbgout << where_from << L": " << buffer << std::endl ;
+		EnterCriticalSection(&dbg_critical_section); \
+		dbgout << where_from << L": " << buffer << std::endl ;\
+		LeaveCriticalSection(&dbg_critical_section);
 	//print a string into the log
-	#define DEBUG_LOG(where_from, msg) dbgout << where_from << L": " << msg << std::endl ;
+	#define DEBUG_LOG(where_from, msg) EnterCriticalSection(&dbg_critical_section); \
+		dbgout << where_from << L": " << msg << std::endl ; \
+		LeaveCriticalSection(&dbg_critical_section);
 #else
     #define DEBUG_LOG_RIID(where_from, msg)
 	#define DEBUG_LOG(where_from, msg)

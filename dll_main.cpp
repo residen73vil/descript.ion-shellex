@@ -72,17 +72,21 @@ LONG ClassFactory::lockCount = 0; // Initialize static member
 // DLL entry point
 BOOL WINAPI DllMain(HINSTANCE hInstance, DWORD fdwReason, LPVOID lpvReserved) {
     switch (fdwReason) {
-    case DLL_THREAD_ATTACH:
     case DLL_PROCESS_ATTACH:
 		    // Set file to output debug log into
     		DEBUG_INIT("c:\\Logs\\dbg.log");
-			DEBUG_LOG( "dllmain", "dll loaded")
+			DEBUG_LOG( "dllmain", "dll loaded");
 			break;
-    case DLL_THREAD_DETACH:
     case DLL_PROCESS_DETACH:
-		DEBUG_LOG( "dllmain", "dll unloaded")
+		DEBUG_LOG( "dllmain", "dll unloaded");
 		DEBUG_CLOSE
         break;
+	case DLL_THREAD_ATTACH:
+		DEBUG_LOG( "dllmain", "dll thread loaded");
+		break;
+    case DLL_THREAD_DETACH:
+		DEBUG_LOG( "dllmain", "dll thread unloaded");
+		break;
     }
 	return TRUE;
 }

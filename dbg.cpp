@@ -3,10 +3,12 @@
 #ifdef _DEBUG
 #include <windows.h>
 #include <regex>
+CRITICAL_SECTION dbg_critical_section;
 std::wofstream dbgout;
 
 
 bool fileExists(const std::string& filename) {
+	InitializeCriticalSection(&dbg_critical_section);
     FILE* file = fopen(filename.c_str(), "r");
     if (file) {
         fclose(file);
