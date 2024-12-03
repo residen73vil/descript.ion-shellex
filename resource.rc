@@ -1,0 +1,51 @@
+#include "resource.h"
+
+
+#include "winres.h"
+
+
+/////////////////////////////////////////////////////////////////////////////
+// English (U.S.) resources
+
+#ifdef _WIN32
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+#pragma code_page(1252)
+#endif //_WIN32
+
+
+
+
+
+IDD_COMMENT_PROPPAGE DIALOGEX 0, 0, 222, 158
+STYLE DS_FIXEDSYS | WS_CHILD | WS_DISABLED | WS_CAPTION
+FONT 8, "MS Shell Dlg", 0, 0, 0x1
+BEGIN
+ 	CONTROL "", 209, "STATIC", SS_LEFT | WS_CHILD | WS_VISIBLE | WS_GROUP, 5, 5, 220, 8  
+	CONTROL "", -1, "STATIC", WS_CHILD | WS_VISIBLE | 0x10, 7, 23, 220, 1 
+	CONTROL "&Comment:", -1, "STATIC", SS_LEFT | WS_CHILD | WS_VISIBLE | WS_GROUP, 5, 8, 220, 8  
+	CONTROL "comment", 0, "EDIT", ES_LEFT | ES_MULTILINE | WS_CHILD | WS_VISIBLE | WS_BORDER | WS_VSCROLL | WS_HSCROLL | WS_TABSTOP, 5, 27, 220, 220 
+END
+
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Icon
+//
+
+// Icon with lowest ID value placed first to ensure application icon
+// remains consistent on all systems.
+IDI_TAB_ICON			ICON	DISCARDABLE	 "res\\Text.ico"
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// String Table
+//
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+	IDS_PROJNAME			"descript.ion-shellex"
+END
+
+

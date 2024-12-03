@@ -7,6 +7,9 @@
 #include "context_menu.h"
 #include "property_sheet.h"
 #include "dbg.h"
+UINT g_cActiveComponents = 0; //counts additional noncom components of the dll that are in use
+HINSTANCE g_dll_hInstance;
+//TODO: Check for memory leakage!!!
 
 
 //Class Factory, part of COM standart
@@ -50,16 +53,25 @@ public:
 			ContextMenuComClass *pClass = new ContextMenuComClass();
 			return pClass->QueryInterface(riid, ppv);
 		}
+		if ( riid == IID_IShellPropSheetExt){
+			ShellPropSheetExtComClass *pClass = new ShellPropSheetExtComClass();
+			return pClass->QueryInterface(riid, ppv);
+		}
 		return E_NOINTERFACE;
 	}
 
 	HRESULT __stdcall LockServer(BOOL fLock) override {
+		DEBUG_LOG( "LockServer", "lockserver called");
 		if (fLock) {
 			InterlockedIncrement(&lockCount);
 		} else {
 			InterlockedDecrement(&lockCount);
 		}
 		return S_OK;
+	}
+	
+	static LONG get_lockCount(){
+		return lockCount;
 	}
 
 private:
@@ -73,10 +85,11 @@ LONG ClassFactory::lockCount = 0; // Initialize static member
 BOOL WINAPI DllMain(HINSTANCE hInstance, DWORD fdwReason, LPVOID lpvReserved) {
     switch (fdwReason) {
     case DLL_PROCESS_ATTACH:
-		    // Set file to output debug log into
-    		DEBUG_INIT("c:\\Logs\\dbg.log");
-			DEBUG_LOG( "dllmain", "dll loaded");
-			break;
+		// Set file to output debug log into
+		g_dll_hInstance = hInstance;
+		DEBUG_INIT("c:\\Logs\\dbg.log");
+		DEBUG_LOG( "dllmain", "dll loaded");
+		break;
     case DLL_PROCESS_DETACH:
 		DEBUG_LOG( "dllmain", "dll unloaded");
 		DEBUG_CLOSE
@@ -119,4 +132,15 @@ extern "C" __declspec(dllexport)	HRESULT	DllGetClassObject(REFCLSID rclsid, REFI
 	}
 	
 	return CLASS_E_CLASSNOTAVAILABLE;
+}
+
+//Is it safe to unload the dll
+STDAPI DllCanUnloadNow() {
+    // Check if the server is locked
+    if (ClassFactory::get_lockCount() == 0 && g_cActiveComponents == 0) {
+		DEBUG_LOG("DllCanUnloadNow", "Can be unloaded");
+        return S_OK; // Safe to unload
+    }
+	DEBUG_LOG("DllCanUnloadNow", "Not allowed to unload");
+    return S_FALSE; // Not safe to unload
 }
