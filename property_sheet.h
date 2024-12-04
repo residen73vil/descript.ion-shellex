@@ -8,6 +8,7 @@
 #include <commctrl.h>
 #include "resource.h"
 #include "dbg.h" 
+#include "shellext_init.h"
 
 //#define WINVER 0x0600 // For Windows Vista and later
 //#define _WIN32_WINNT 0x0600
@@ -23,7 +24,7 @@ const GUID CLSID_ShellPropSheetExtComClass = { 0x5629FF98, 0xE953, 0x466D, { 0x8
 
 // Forward declaration of the interface
 class  IShellPropSheetExtComClass :
-	public IShellExtInit,
+	public ShellExtInitComClass,
 	public  IShellPropSheetExt
  {
 public:
@@ -39,9 +40,9 @@ class ShellPropSheetExtComClass : public IShellPropSheetExtComClass {
 protected:
 	TCHAR m_szFile[MAX_PATH];
 public:
-	ShellPropSheetExtComClass() : refCount(1) {}
-
-	HRESULT __stdcall Initialize(LPCITEMIDLIST pidlFolder, IDataObject* pDataObj, HKEY hKeyProgID) override ;
+	ShellPropSheetExtComClass() : refCount(0) {
+		DEBUG_LOG(L"ShellPropSheetExtComClass", "object created") 
+	}
 
 	HRESULT __stdcall QueryInterface(REFIID riid, void **ppv) override;
 

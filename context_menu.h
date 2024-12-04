@@ -4,6 +4,7 @@
 #include <shobjidl.h>
 #include <shlobj.h>
 #include <shlguid.h>
+#include "shellext_init.h"
 
 // Define a GUID for the COM class
 //{ed730b9b-5779-4692-9e36-f7d9a4e86e06}
@@ -13,8 +14,8 @@ const GUID CLSID_ContextMenuClass = { 0x5629FF98, 0xE953, 0x466D, { 0x84, 0x80, 
 
 // Forward declaration of the interface
 class IContextMenuComClass : 
-	public IShellExtInit,
-	public IContextMenu
+	public IContextMenu,
+	public ShellExtInitComClass
  {
 public:
         // IContextMenu methods
@@ -29,12 +30,13 @@ public:
 
 // Implement the COM Class
 class ContextMenuComClass : public IContextMenuComClass {
-protected:
-	TCHAR m_szFile[MAX_PATH];
+//protected:
+//	TCHAR m_szFile[MAX_PATH];
 public:
-	ContextMenuComClass() : refCount(1) {}
+	ContextMenuComClass() : refCount(0) {
+		DEBUG_LOG(L"ContextMenuComClass", "object created") 
+	}
 	
-	HRESULT __stdcall Initialize(LPCITEMIDLIST pidlFolder, IDataObject* pDataObj, HKEY hKeyProgID) override ;
 	
 	HRESULT __stdcall QueryInterface(REFIID riid, void **ppv) override;
 

@@ -1,51 +1,8 @@
 #include "context_menu.h"
 #include "dbg.h"
-HRESULT __stdcall ContextMenuComClass::Initialize(LPCITEMIDLIST pidlFolder, IDataObject* pDataObj, HKEY hKeyProgID) {
-	// Initialize your shell extension - store relevant info if needed
-	FORMATETC fmt = { CF_HDROP, NULL, DVASPECT_CONTENT, -1, TYMED_HGLOBAL };
-	STGMEDIUM stg = { TYMED_HGLOBAL };
-	HDROP	hDrop;
-
-	// Look for CF_HDROP data in the data object. If there
-
-	// is no such data, return an error back to Explorer.
-
-	if ( FAILED( pDataObj->GetData ( &fmt, &stg ) ))
-		return E_INVALIDARG;
- 
-	// Get a pointer to the actual data.
-
-	hDrop = (HDROP) GlobalLock ( stg.hGlobal );
- 
-	// Make sure it worked.
-
-	if ( NULL == hDrop )
-		return E_INVALIDARG;
-	UINT uNumFiles = DragQueryFile ( hDrop, 0xFFFFFFFF, NULL, 0 );
-	HRESULT hr = S_OK;
-	
-	if ( 0 == uNumFiles )
-		{
-		GlobalUnlock ( stg.hGlobal );
-		ReleaseStgMedium ( &stg );
-		return E_INVALIDARG;
-		}
- 
-	// Get the name of the first file and store it in our
-
-	// member variable m_szFile.
-
-	if ( 0 == DragQueryFile ( hDrop, 0, m_szFile, MAX_PATH ) )
-		hr = E_INVALIDARG;
- 
-	GlobalUnlock ( stg.hGlobal );
-	ReleaseStgMedium ( &stg );
- 
-	return hr;
-}
 
 HRESULT __stdcall ContextMenuComClass::QueryInterface(REFIID riid, void **ppv) {
-	DEBUG_LOG_RIID(L"ObjectQuery:", riid) ;
+	DEBUG_LOG_RIID(L"ContextMenuComClass", riid) ;
 
 	if (riid == IID_IUnknown || riid == IID_IContextMenuComClass) {
 		*ppv = static_cast<IContextMenuComClass*>(this);
@@ -58,7 +15,8 @@ HRESULT __stdcall ContextMenuComClass::QueryInterface(REFIID riid, void **ppv) {
 			return NOERROR;
 		}
 	if ( riid == IID_IShellExtInit) {
-		*ppv = static_cast<IShellExtInit*>(this);
+		DEBUG_LOG(L"ContextMenuComClass", "return IShellExtInit") ;
+		*ppv = static_cast<ShellExtInitComClass*>(this);
 			AddRef();
 			return NOERROR;
 		}
@@ -67,12 +25,15 @@ HRESULT __stdcall ContextMenuComClass::QueryInterface(REFIID riid, void **ppv) {
 }
 
 ULONG __stdcall ContextMenuComClass::AddRef() {
+	DEBUG_LOG(L"ContextMenuComClass", "refcount incremented") 
 	return InterlockedIncrement(&refCount);
 }
 
 ULONG __stdcall ContextMenuComClass::Release() {
+	DEBUG_LOG(L"ContextMenuComClass", "refcount decremented") 
 	ULONG count = InterlockedDecrement(&refCount);
 	if (count == 0) {
+		DEBUG_LOG(L"ContextMenuComClass", "object deleted ")
 		delete this;
 	}
 	return count;
@@ -82,6 +43,7 @@ ULONG __stdcall ContextMenuComClass::Release() {
 //Adds items to the menu
 HRESULT __stdcall ContextMenuComClass::QueryContextMenu(HMENU hMenu, UINT indexMenu, UINT idCmdFirst,
 									UINT idCmdLast, UINT uFlags) {
+	DEBUG_LOG(L"ContextMenuComClass", "insert elements into the menu") ;
 	InsertMenu(hMenu, indexMenu, MF_BYPOSITION, idCmdFirst, L"My Extension");
 	return MAKE_HRESULT(SEVERITY_SUCCESS, 0, 1);
 }
