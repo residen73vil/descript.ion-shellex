@@ -56,7 +56,7 @@ HRESULT __stdcall ContextMenuComClass::InvokeCommand(LPCMINVOKECOMMANDINFO pici)
 	}
 
 	if (IS_INTRESOURCE(pici->lpVerb)){ //checking whether lpVerb is a menu offset or a canonical verb (RunAs/Open/Preview etc)
-		MessageBox(NULL, this->m_szFile, L"Info", MB_OK);
+		MessageBox(NULL, this->m_szPath, L"Info", MB_OK);
 		return S_OK;
 	} else {
 		return E_NOTIMPL; //if lpVerb contains canonical verb, return not implemented
