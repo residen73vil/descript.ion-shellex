@@ -93,10 +93,10 @@ bool GetFileNameAndPath(LPCTSTR szFile, TCHAR* lpFileName, TCHAR* lpFilePath, bo
 			// Null-terminate the path
 			if (!bSkipPathOptimization)
 			{
-				*lpFilePart = '\0';
+				*lpFilePart = _T('\0');
 				_tcsncpy(lpFilePath, fullPath, MAX_PATH);
 			} else {
-				*lpFilePath = '\0'; //skip path, set path to ""
+				*lpFilePath = _T('\0'); //skip path, set path to ""
 			} 
 		}
         return true; // Success
