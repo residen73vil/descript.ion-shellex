@@ -50,7 +50,7 @@ HRESULT __stdcall ShellExtInitComClass::Initialize(LPCITEMIDLIST pidlFolder, IDa
 			if (!bSkipPathOptimization) //if not skipping the path 
 			{
 				//make a copy of the path
-				wcsncpy(m_szPath, szFilePath, MAX_PATH);
+				_tcsncpy(m_szPath, szFilePath, MAX_PATH);
 				DEBUG_LOG(L"ShellExtInitComClass::Initialize selected filepath", szFilePath);
 				bSkipPathOptimization = true; //and start skipping in next iterations 
 			}
@@ -89,12 +89,12 @@ bool GetFileNameAndPath(LPCTSTR szFile, TCHAR* lpFileName, TCHAR* lpFilePath, bo
     if (result > 0 && result < MAX_PATH) {
         // Copy the file name
         if (lpFilePart != nullptr) {
-			wcsncpy(lpFileName, lpFilePart, MAX_PATH);
+			_tcsncpy(lpFileName, lpFilePart, MAX_PATH);
 			// Null-terminate the path
 			if (!bSkipPathOptimization)
 			{
 				*lpFilePart = '\0';
-				wcsncpy(lpFilePath, fullPath, MAX_PATH);
+				_tcsncpy(lpFilePath, fullPath, MAX_PATH);
 			} else {
 				*lpFilePath = '\0'; //skip path, set path to ""
 			} 

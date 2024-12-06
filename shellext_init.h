@@ -7,6 +7,7 @@
 #include <windows.h>
 #include <fileapi.h>
 #include <commctrl.h>
+#include <tchar.h>
 #include <string>
 #include <list>
 #include "resource.h"
