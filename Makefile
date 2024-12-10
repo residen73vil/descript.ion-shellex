@@ -4,7 +4,7 @@ CFLAGS = -shared  -DUNICODE -D_UNICODE -std=c++11
 LDFLAGS = -Wl,--kill-at  -luuid -lole32 -lcomctl32 -mwindows
 
 # Debug flags
-DEBUG_FLAGS = -D_DEBUG
+DEBUG_FLAGS = -D_DEBUG -g
 # Release flags
 RELEASE_FLAGS =
 
