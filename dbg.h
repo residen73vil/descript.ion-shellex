@@ -23,12 +23,19 @@
 	#define DEBUG_LOG(where_from, msg) EnterCriticalSection(&dbg_critical_section); \
 		dbgout << where_from << L": " << msg << std::endl ; \
 		LeaveCriticalSection(&dbg_critical_section);
+	#define DEBUG_LOG_ANSI(where_from, msg)  std::string msg_char = msg; \
+		std::wstring msg_wchar(msg_char.begin(), msg_char.end()); \
+		EnterCriticalSection(&dbg_critical_section); \
+		dbgout << where_from << L": " << msg_wchar << std::endl ; \
+		LeaveCriticalSection(&dbg_critical_section);
 #else
     #define DEBUG_LOG_RIID(where_from, msg)
 	#define DEBUG_LOG(where_from, msg)
+	#define DEBUG_LOG_ANSI(where_from, msg)
 	#define DEBUG_INIT(log_file)
 	#define DEBUG_CLOSE
-#endif
+	
+#endif //_DEBUG
 
 
-#endif
+#endif //DBG_H

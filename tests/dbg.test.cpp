@@ -10,6 +10,7 @@ int main(){
 	DEBUG_INIT("c:\\Logs\\dbg.log");
 	DEBUG_LOG( "test:", "printing to the log test");
 	DEBUG_LOG_RIID(L"test:", IID_Itest) ;
+	DEBUG_LOG_ANSI(L"test:", "test_ansi") ;
 	_sleep(5000); //to keep file busy for 5 seconds 
 	DEBUG_CLOSE;
 }

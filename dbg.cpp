@@ -83,4 +83,5 @@ void dbg_open_log_file(const char* log_file) {
 	dbgout.open(newPath);
 }
 
+
 #endif
