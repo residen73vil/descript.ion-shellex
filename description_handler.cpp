@@ -104,7 +104,7 @@ bool CDescriptionHandler::LoadFileToMap(LPCTSTR &filePath) {
 			}
 			value.erase(value.find_last_not_of(" \t")+1); //strip spaces at the beginning
 			if (comments_map.count(key) > 0) {
-				DEBUG_LOG("LoadFileToMap:error in descript.ion filename mentioned several times", "" );
+				DEBUG_LOG_ANSI("LoadFileToMap:error in descript.ion filename mentioned several times", key );
 				//old value will be overwritten!
 				//TODO: does nothing on non-debug builds, so add something here!
 			}
