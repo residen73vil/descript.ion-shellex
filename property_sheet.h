@@ -9,6 +9,7 @@
 #include "resource.h"
 #include "dbg.h" 
 #include "shellext_init.h"
+#include "description_handler.h"
 
 //#define WINVER 0x0600 // For Windows Vista and later
 //#define _WIN32_WINNT 0x0600
@@ -61,7 +62,7 @@ private:
 //Funictions for handling winapi callbacks
 INT_PTR CALLBACK PropPageDlgProc ( HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam );
 UINT CALLBACK PropPageCallbackProc ( HWND hwnd, UINT uMsg, LPPROPSHEETPAGE ppsp );
-//BOOL OnInitDialog ( HWND hwnd, LPARAM lParam );
+BOOL OnInitDialog ( HWND hwnd, LPARAM lParam );
 //BOOL OnApply ( HWND hwnd, PSHNOTIFY* phdr );
 
 #endif

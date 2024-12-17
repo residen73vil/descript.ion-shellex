@@ -81,30 +81,29 @@ HRESULT __stdcall ShellPropSheetExtComClass::AddPages ( LPFNADDPROPSHEETPAGE lpf
 
 INT_PTR CALLBACK PropPageDlgProc ( HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam ){
 	BOOL bRet = FALSE;
-
+	DEBUG_LOG("PropPageDlgProc MSG", uMsg)
 	switch ( uMsg )
 		{
 		case WM_INITDIALOG:
-			bRet = FALSE;//OnInitDialog ( hwnd, lParam );
+			bRet = OnInitDialog( hwnd, lParam ); 
 		break;
-
+		case WM_COMMAND:
+			DEBUG_LOG("	WM_COMMAND", HIWORD(wParam))
+			DEBUG_LOG("	WM_COMMAND LOW", LOWORD(wParam))
+			if (HIWORD(wParam) == EN_CHANGE && LOWORD(wParam) == IDC_TEXT)
+				SendMessage ( GetParent(hwnd), PSM_CHANGED, (WPARAM) hwnd, 0 );
+		break;
 		case WM_NOTIFY:
 			{
 			NMHDR* phdr = (NMHDR*) lParam;
+			DEBUG_LOG("		PropPageDlgProc WM_NOTIFY code", phdr->code)
+			DEBUG_LOG("		PropPageDlgProc WM_NOTIFY wParam", HIWORD(wParam))
 
 			switch ( phdr->code )
 				{
 				case PSN_APPLY:
+					DEBUG_LOG("	WM_NOTIFY", "Apply")
 					bRet = TRUE;// OnApply ( hwnd, (PSHNOTIFY*) phdr );
-				break;
-
-				//TODO: Activatin apply button doesn't work, needs to be fixed
-				case WM_COMMAND:
-					// Handle command messages, including notifications from controls
-					if (HIWORD(wParam) == EN_CHANGE)
-						// If the user changes any of the DTP controls, enable
-						// the Apply button.
-						SendMessage ( GetParent(hwnd), PSM_CHANGED, (WPARAM) hwnd, 0 ); //TODO: doesn't work, 
 				break;
 				}
 			}
@@ -119,4 +118,10 @@ UINT CALLBACK PropPageCallbackProc ( HWND hwnd, UINT uMsg, LPPROPSHEETPAGE ppsp 
 		//free ( (void*) ppsp->lParam ); // should contain file names, and should be freed upon exit!!!
 
 	return 1;   // used for PSPCB_CREATE - let the page be created
+}
+BOOL OnInitDialog ( HWND hwnd, LPARAM lParam ){
+		HWND hEditControl = GetDlgItem(hwnd, IDC_TEXT);
+		SetWindowText(hEditControl, L"Initial Text");
+		SetFocus(hEditControl);
+		return TRUE; //don't override focus with default
 }
