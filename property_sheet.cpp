@@ -44,35 +44,46 @@ ULONG __stdcall ShellPropSheetExtComClass::Release() {
 // IShellPropSheetExt methods
 //Adds page to the property sheets window
 HRESULT __stdcall ShellPropSheetExtComClass::AddPages ( LPFNADDPROPSHEETPAGE lpfnAddPageProc, LPARAM lParam ) {
-	DEBUG_LOG(L"property_sheet", L"test");
-	PROPSHEETPAGE  psp;
-	HPROPSHEETPAGE hPage;
+	
+	bool only_one_file_selected = (m_lsFiles.size() == 1) ? true : false;
+	if ( m_lsFiles.size() < 1)
+		return S_FALSE;
+	string_list::iterator it = m_lsFiles.begin();
+	for (string_list::iterator it =  m_lsFiles.begin(); it !=  m_lsFiles.end(); ++it) 
+	{
+		DEBUG_LOG(L"property_sheet file", *it);
+		
+		PROPSHEETPAGE  psp;
+		HPROPSHEETPAGE hPage;
+		
+	
+		psp.dwSize	  = sizeof(PROPSHEETPAGE);
+		psp.dwFlags	 = PSP_USEREFPARENT | PSP_USETITLE |
+							PSP_USEICONID | PSP_USECALLBACK;
+		psp.hInstance   = g_dll_hInstance;
+		psp.pszTemplate = MAKEINTRESOURCE(IDD_COMMENT_PROPPAGE);
+		psp.pszIcon	 = MAKEINTRESOURCE(IDI_TAB_ICON);
+		
+		std::basic_string<TCHAR> *fname	= new std::basic_string<TCHAR>(*it);
 
-
-	psp.dwSize	  = sizeof(PROPSHEETPAGE);
-	psp.dwFlags	 = PSP_USEREFPARENT | PSP_USETITLE |
-						PSP_USEICONID | PSP_USECALLBACK;
-	psp.hInstance   = g_dll_hInstance;
-	psp.pszTemplate = MAKEINTRESOURCE(IDD_COMMENT_PROPPAGE);
-	psp.pszIcon	 = MAKEINTRESOURCE(IDI_TAB_ICON);
-	psp.pszTitle	= L"test";
-	psp.pfnDlgProc  = PropPageDlgProc;
-	psp.lParam	  = (LPARAM) m_szFile;
-	psp.pfnCallback = PropPageCallbackProc;
-	psp.pcRefParent = (UINT*) &g_cActiveComponents;
-	hPage = CreatePropertySheetPage ( &psp );
-
-
-	if ( NULL != hPage )
-	  {
-	  // Call the shell's callback function, so it adds the page to
-
-	  // the property sheet.
-
-	  if ( !lpfnAddPageProc ( hPage, lParam ) )
-	  	DestroyPropertySheetPage ( hPage );
-	  }
-
+		psp.pszTitle	= only_one_file_selected ? _T("Comment") : static_cast<LPCWSTR>(fname->c_str());
+		psp.pfnDlgProc  = PropPageDlgProc;
+		psp.lParam	  = (LPARAM) fname;
+		psp.pfnCallback = PropPageCallbackProc;
+		psp.pcRefParent = (UINT*) &g_cActiveComponents;
+		hPage = CreatePropertySheetPage ( &psp );
+	
+	
+		if ( NULL != hPage )
+		  {
+		  // Call the shell's callback function, so it adds the page to
+	
+		  // the property sheet.
+	
+		  if ( !lpfnAddPageProc ( hPage, lParam ) )
+		  	DestroyPropertySheetPage ( hPage );
+		  }
+	}
 	
   return S_OK;
 }
@@ -114,14 +125,17 @@ INT_PTR CALLBACK PropPageDlgProc ( HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM l
 }
 
 UINT CALLBACK PropPageCallbackProc ( HWND hwnd, UINT uMsg, LPPROPSHEETPAGE ppsp ){
-		//if ( PSPCB_RELEASE == uMsg )
-		//free ( (void*) ppsp->lParam ); // should contain file names, and should be freed upon exit!!!
+		DEBUG_LOG("PropPageCallbackProc:", uMsg);
+		if ( PSPCB_RELEASE == uMsg ){
+			DEBUG_LOG("PropPageDlgProc name is freed", *((std::basic_string<TCHAR>*)(ppsp->lParam)));
+			free ( (void*) ppsp->lParam ); // a string containing file name, is freed upon exit
+		}
 
 	return 1;   // used for PSPCB_CREATE - let the page be created
 }
 BOOL OnInitDialog ( HWND hwnd, LPARAM lParam ){
 		HWND hEditControl = GetDlgItem(hwnd, IDC_TEXT);
-		SetWindowText(hEditControl, L"Initial Text");
+		SetWindowTextA(hEditControl, "Initial Text");
 		SetFocus(hEditControl);
 		return TRUE; //don't override focus with default
 }
