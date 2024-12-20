@@ -24,14 +24,29 @@ bool CDescriptionHandler::SaveChanges()
 	return true;
 }
 
-bool CDescriptionHandler::ReadComment(LPCTSTR filename, /*out*/ LPTSTR comment)
+bool CDescriptionHandler::ReadComment(LPCTSTR filename, /*out*/ std::basic_string<TCHAR>& comment)
 {
-	return true;
+	std::wstring wide( filename ); 
+	std::string key( wide.begin(), wide.end() );
+	if (!IsCommented(filename)){
+		return false;
+	}else{
+		std::string comment_str = comments_map[key];
+		std::wstring w( comment_str.begin(), comment_str.end());
+		//_tcsncpy(comment, w.c_str(), MAX_PATH);
+		comment = w;
+		return true;
+	}
 }
 
 bool CDescriptionHandler::IsCommented(LPCTSTR filename)
 {
-	return true;
+	std::wstring wide( filename ); 
+	std::string key( wide.begin(), wide.end() );
+	if (comments_map.count(key) > 0)
+		return true;
+	else
+		return false;
 }
 
 bool CDescriptionHandler::AddChangeComment(LPCTSTR filename, LPCTSTR comment)

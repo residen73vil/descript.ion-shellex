@@ -2,6 +2,8 @@
 //g++ description_handler.test.cpp ../description_handler.cpp ../dbg.cpp -D_DEBUG -DUNICODE -D_UNICODE -std=c++11 -g
 #include "../description_handler.h"
 #include "windows.h"
+#include <iostream>
+
 
 
 int main(){
@@ -10,6 +12,8 @@ int main(){
 	
 	test.LoadFile(_T(".\\descript.ion"));
 	test.LoadPath(_T("."));
-
-	DEBUG_CLOSE;
+	test.IsCommented(L"a.exe");
+	std::basic_string<TCHAR> comment;
+	test.ReadComment(L"a.exe", comment);
+	std::wcout << comment << std::endl;
 }
