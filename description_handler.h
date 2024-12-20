@@ -23,7 +23,7 @@ public:
 	bool LoadFile(LPCTSTR filename);
 	bool LoadPath(LPCTSTR path); //calls LoadFile("%path%\\descript.ion")
 	bool SaveChanges();
-	bool ReadComment(LPCTSTR filename, /*out*/ LPTSTR comment);
+	bool ReadComment(LPCTSTR filename, /*out*/ std::basic_string<TCHAR>& comment);
 	bool IsCommented(LPCTSTR filename);
 	bool AddChangeComment(LPCTSTR filename, LPCTSTR comment);
 	bool FilesWithComments(/*out*/ string_list* files); //returns files that have comments 
