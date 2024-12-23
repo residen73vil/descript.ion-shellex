@@ -12,10 +12,13 @@ silently prevented dll from being loaded.
 
 By default logs are printed into c:\Logs\dbg#.log
 
-Although you can debug explorer with gdb, you probably don't want to, so you'll have 
-to relay on debut logs. In order to replace you dll in the system you will have to
-kill explorer in the task manager and start it again, or use other means like 
-holding down **Ctrl+Alt+Shift** and click **Cancel** in the Shutdown menu. 
+You can debug explorer with gdb, kill it in the task manager and  run
+	gdb explorer
+then set a breakpoint somewhere in the code, run it and trigger breakpoint containing action,
+remember that desktop will hang up.
+In order to replace you dll in the system you will have to kill explorer in the task manager 
+and start it again or just restart it, you can also use other means like holding down 
+**Ctrl+Alt+Shift** and click **Cancel** in the Shutdown menu. 
 
 
 ### Release build
