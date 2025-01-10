@@ -1,4 +1,4 @@
-//Test description_file_rw.h
+﻿//Test description_file_rw.h
 //g++ description_file_rw.test.cpp ../description_file_rw.cpp ../dbg.cpp -D_DEBUG -DUNICODE -D_UNICODE -std=c++11 -g
 #include "../description_file_rw.h"
 #include "windows.h"
@@ -7,27 +7,23 @@
 
 
 int main(){
+
 	CDescriptionFileRW test;
-	DEBUG_INIT("c:\\Logs\\dbg.log");
+	std::wstring str;
 	
-	test.LoadFile(_T(".\\descript.ion"));
-	test.FindLines();
+	const wchar_t* file_names[] = { L".\\descript.ion", L".\\Descript.UTF8BOM.ion", L".\\Descript.UTF8.ion",
+								L".\\Descript.UTF16LEBOM.ion", L".\\Descript.UTF16LE.ion", 
+								L".\\Descript.UTF16BEBOM.ion", L".\\Descript.UTF16BE.ion" 
+							};
+#define FILE_NAMES_SIZE 7
 
-	test.LoadFile(_T(".\\Descript.UTF8BOM.ion"));
-	test.FindLines();
-
-	test.LoadFile(_T(".\\Descript.UTF8.ion"));
-	test.FindLines();
-
-	test.LoadFile(_T(".\\Descript.UTF16LEBOM.ion"));
-	test.FindLines();
-	
-	test.LoadFile(_T(".\\Descript.UTF16LE.ion"));
-	test.FindLines();
-
-	test.LoadFile(_T(".\\Descript.UTF16BEBOM.ion"));
-	test.FindLines();
-
-	test.LoadFile(_T(".\\Descript.UTF16BE.ion"));
-	test.FindLines();
+	for (int i = 0; i < FILE_NAMES_SIZE; i++){
+		test.LoadFile( file_names[i] );
+		size_t number_of_lines = test.FindLines();
+		for ( int j = 0; j < number_of_lines; j++){
+			test.GetConvertedLine(j, &str);
+			MessageBox(NULL, str.c_str(), file_names[i], MB_OK | MB_ICONINFORMATION);
+			test.GetConvertedLine(1, &str);
+		}
+	}
 }
