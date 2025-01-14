@@ -18,7 +18,8 @@ typedef std::list< std::basic_string<TCHAR> > string_list;
 class  CDescriptionHandler
 {
 private:
-	std::unordered_map<std::basic_string<CHAR>, std::basic_string<CHAR>> comments_map;
+	std::unordered_map<std::basic_string<TCHAR>, std::basic_string<TCHAR>> m_comments_map;
+	std::unordered_map<std::basic_string<TCHAR>, int> m_linenumber_map;
 public:
 	bool LoadFile(LPCTSTR filename);
 	bool LoadPath(LPCTSTR path); //calls LoadFile("%path%\\descript.ion")

@@ -32,6 +32,7 @@ class  CDescriptionFileRW
 {
 private:
 	char* m_lpcFileBuffer;
+	char* m_lpcFileBuffer_copy; // unchanged m_lpcFileBuffer for delete[]
 	UINT m_nFileSize = 0;
 	std::vector< std::pair<char*,char*> > m_vLines;
 public:
@@ -85,6 +86,7 @@ public:
 	*		  memory location before calling this function.
 	*/
 	int GetConvertedLine(int number, /*out*/ std::wstring* line);
+
 
 	~CDescriptionFileRW();
 };

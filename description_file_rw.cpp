@@ -1,5 +1,5 @@
 #include "description_file_rw.h"
-#include <iostream>
+
 
 
 
@@ -20,12 +20,14 @@ bool CDescriptionFileRW::LoadFile(LPCTSTR filename) {
 	}
 
 	m_lpcFileBuffer =  new char[fileSize / sizeof(CHAR) + 1];
+	m_lpcFileBuffer_copy = m_lpcFileBuffer; //making copy because m_lpcFileBuffer may be changed by LookForBomInBuffer
 	DWORD bytesRead;
 	if (!ReadFile(hFile, m_lpcFileBuffer, fileSize, &bytesRead, NULL)) {
 		DEBUG_LOG("LoadFileToMap:Error reading file", GetLastError());
 		CloseHandle(hFile);
 		return false;
 	}
+	CloseHandle(hFile);
 
 	m_nFileSize = bytesRead;
 	LookForBomInBuffer();
@@ -55,6 +57,7 @@ size_t CDescriptionFileRW::FindLines() {
 }
 
 UINT CDescriptionFileRW::LookForBomInBuffer(){
+	//WARNIGN changing m_lpcFileBuffer pointer causes error upon its deletion, use real pointer instead!!!
 	if (m_lpcFileBuffer[0] == BOM_UTF8[0] && 
 			m_lpcFileBuffer[1] == BOM_UTF8[1] &&
 			m_lpcFileBuffer[2] == BOM_UTF8[2]
@@ -144,5 +147,5 @@ int CDescriptionFileRW::GetConvertedLine(int number, /*out*/ std::wstring* line)
 
 CDescriptionFileRW::~CDescriptionFileRW(){
 
-	delete	m_lpcFileBuffer;
+	delete[]	m_lpcFileBuffer_copy;
 }

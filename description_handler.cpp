@@ -1,5 +1,5 @@
 #include "description_handler.h"
-#include <iostream>
+#include "description_file_rw.h"
 
 bool CDescriptionHandler::LoadFile(LPCTSTR filename)
 {
@@ -26,24 +26,20 @@ bool CDescriptionHandler::SaveChanges()
 
 bool CDescriptionHandler::ReadComment(LPCTSTR filename, /*out*/ std::basic_string<TCHAR>& comment)
 {
-	std::wstring wide( filename ); 
-	std::string key( wide.begin(), wide.end() );
+	std::wstring key( filename ); 
 	if (!IsCommented(filename)){
 		return false;
 	}else{
-		std::string comment_str = comments_map[key];
-		std::wstring w( comment_str.begin(), comment_str.end());
-		//_tcsncpy(comment, w.c_str(), MAX_PATH);
-		comment = w;
+		std::wstring comment_str = m_comments_map[key];
+		comment = comment_str;
 		return true;
 	}
 }
 
 bool CDescriptionHandler::IsCommented(LPCTSTR filename)
 {
-	std::wstring wide( filename ); 
-	std::string key( wide.begin(), wide.end() );
-	if (comments_map.count(key) > 0)
+	std::wstring key( filename ); 
+	if (m_comments_map.count(key) > 0)
 		return true;
 	else
 		return false;
@@ -62,43 +58,18 @@ bool CDescriptionHandler::FilesWithComments(/*out*/ string_list* files) //return
 
 
 bool CDescriptionHandler::LoadFileToMap(LPCTSTR &filePath) {
-    HANDLE hFile = CreateFile(filePath, GENERIC_READ, 0, NULL, OPEN_EXISTING, 
-									FILE_ATTRIBUTE_NORMAL, NULL);
-    
-    if (hFile == INVALID_HANDLE_VALUE) {
-        DEBUG_LOG("Error opening file", GetLastError());
-        return false;
-    }
-	//TODO: limit file size to prevent stack overflow
-    DWORD fileSize = GetFileSize(hFile, NULL);
-    if (fileSize == INVALID_FILE_SIZE) {
-        DEBUG_LOG("LoadFileToMap:Error getting file size", GetLastError());
-        CloseHandle(hFile);
-        return false;
-    }
+	CDescriptionFileRW file_reader;
+	file_reader.LoadFile(filePath);
+	size_t number_of_lines = file_reader.FindLines();
+	std::wstring line;
+	
+	for ( int i = 0; i < number_of_lines; i++){
+		file_reader.GetConvertedLine(i, &line);
 
-    std::vector<CHAR> buffer(fileSize / sizeof(CHAR) + 1);
-    DWORD bytesRead;
-    if (!ReadFile(hFile, buffer.data(), fileSize, &bytesRead, NULL)) {
-        DEBUG_LOG("LoadFileToMap:Error reading file", GetLastError());
-        CloseHandle(hFile);
-        return false;
-    }
-
-    buffer[bytesRead / sizeof(CHAR)] = 0; // Null-terminate the string
-
-    CloseHandle(hFile);
-
-    std::basic_string<CHAR> content(buffer.data());
-    std::basic_istringstream<CHAR> iss(content);
-    std::basic_string<CHAR> line;
-
-    while (std::getline(iss, line)) {
-		//std::cout << line << std::endl;
 		size_t pos = 0;
-		if (line[0] == '\"'){
-        	pos = line.find_first_of('\"', 1);
-			if (pos != std::basic_string<CHAR>::npos && pos != 2){
+		if (line[0] == L'\"'){
+			pos = line.find_first_of(L'\"', 1);
+			if (pos != std::basic_string<TCHAR>::npos && pos != 2){
 				line.erase(0,1); //get rid of first \"
 				pos = pos - 1; //correct to accommodate deletions 
 				line.erase(pos,1); //get rid of last \"
@@ -108,24 +79,24 @@ bool CDescriptionHandler::LoadFileToMap(LPCTSTR &filePath) {
 				continue; //skip broken filename
 			}
 		} else {
-			pos = line.find_first_of(" \t");
+			pos = line.find_first_of(L" \t");
 		}
-        if (pos != std::basic_string<CHAR>::npos && pos != 0) {
-        	std::basic_string<CHAR> key = line.substr(0, pos);
-            std::basic_string<CHAR> value = line.substr(pos + 1);
-			pos = value.find_last_of('\r');
-			if ( pos != std::basic_string<CHAR>::npos){
+		if (pos != std::basic_string<TCHAR>::npos && pos != 0) {
+			std::basic_string<TCHAR> key = line.substr(0, pos);
+			std::basic_string<TCHAR> value = line.substr(pos + 1);
+			pos = value.find_last_of(L'\r');
+			if ( pos != std::basic_string<TCHAR>::npos){
 				value.erase(pos,1); //get rid of \r at the end
 			}
-			value.erase(value.find_last_not_of(" \t")+1); //strip spaces at the beginning
-			if (comments_map.count(key) > 0) {
-				DEBUG_LOG_ANSI("LoadFileToMap:error in descript.ion filename mentioned several times", key );
+			value.erase(value.find_last_not_of(L" \t")+1); //strip spaces at the beginning
+			if (m_comments_map.count(key) > 0) {
+				DEBUG_LOG("LoadFileToMap:error in descript.ion filename mentioned several times", key );
 				//old value will be overwritten!
 				//TODO: does nothing on non-debug builds, so add something here!
 			}
-            comments_map[key] = value;
-        }
-    }
+			m_comments_map[key] = value;
+		}
+	}
 
-    return true;
+	return true;
 }
