@@ -2,7 +2,7 @@
 
 //TODO: Process several files not just one
 
-CDescriptionHandler desctiption;
+CDescriptionHandler* description;
 
 
 HRESULT __stdcall ShellPropSheetExtComClass::QueryInterface(REFIID riid, void **ppv) {
@@ -49,7 +49,8 @@ HRESULT __stdcall ShellPropSheetExtComClass::AddPages ( LPFNADDPROPSHEETPAGE lpf
 	bool only_one_file_selected = (m_lsFiles.size() == 1) ? true : false;
 	if ( m_lsFiles.size() < 1)
 		return S_FALSE;
-	desctiption.LoadPath(m_szPath);
+	description = new CDescriptionHandler();
+	description->LoadPath(m_szPath);
 	
 	
 	string_list::iterator it = m_lsFiles.begin();
@@ -134,6 +135,7 @@ UINT CALLBACK PropPageCallbackProc ( HWND hwnd, UINT uMsg, LPPROPSHEETPAGE ppsp 
 		if ( PSPCB_RELEASE == uMsg ){
 			DEBUG_LOG("PropPageDlgProc name is freed", *(reinterpret_cast<std::basic_string<TCHAR>*>(ppsp->lParam)));
 			delete ( reinterpret_cast<std::basic_string<TCHAR>*>(ppsp->lParam) ); // a string containing file name, is freed upon exit
+			delete description;
 		}
 
 	return 1;   // used for PSPCB_CREATE - let the page be created
@@ -143,7 +145,7 @@ BOOL OnInitDialog ( HWND hwnd, LPARAM lParam ){
 		std::basic_string<TCHAR> comment;
 		PROPSHEETPAGE* psp = (PROPSHEETPAGE*)lParam;
 		std::basic_string<TCHAR> *fname = (std::basic_string<TCHAR>*)(psp->lParam);
-		if ( desctiption.ReadComment( fname->c_str(), comment ) ){
+		if ( description->ReadComment( fname->c_str(), comment ) ){
 			SetWindowText(hEditControl, comment.c_str());
 		}else{
 			SetWindowText(hEditControl, L"");
