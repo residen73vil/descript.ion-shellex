@@ -94,6 +94,7 @@ bool CDescriptionHandler::LoadFileToMap(LPCTSTR &filePath) {
 				//old value will be overwritten!
 				//TODO: does nothing on non-debug builds, so add something here!
 			}
+			m_linenumber_map[key] = i;
 			m_comments_map[key] = value;
 		}
 	}

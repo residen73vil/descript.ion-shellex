@@ -30,6 +30,7 @@ bool CDescriptionFileRW::LoadFile(LPCTSTR filename) {
 	CloseHandle(hFile);
 
 	m_nFileSize = bytesRead;
+	m_sFilename = filename;
 	LookForBomInBuffer();
 
 	return true;
@@ -49,6 +50,7 @@ size_t CDescriptionFileRW::FindLines() {
 				start=start+1;
 		} 
 	}
+	//TODO: last line seems to sometimes contain garbage, fix it
 	if (start < end) { //add last line
 		m_vLines.emplace_back(start, end);
 	}
@@ -144,6 +146,109 @@ int CDescriptionFileRW::GetConvertedLine(int number, /*out*/ std::wstring* line)
 	}
 }
 
+bool CDescriptionFileRW::ChangeLine(int number, std::wstring* line){
+	m_mChanges[number] = *line;
+	return true;
+}
+
+bool CDescriptionFileRW::ConvertAndSaveChanges(UINT codepage){
+	std::map<int, tuple_2_sizes_and_ptr> changes_cvonverted; //holds converted lines and their sizes 
+															//plus old size of corresponding line in file
+	//populating changes_cvonverted
+	for (std::map<int, std::wstring>::iterator it = m_mChanges.begin(); it != m_mChanges.end(); ++it) {
+		DEBUG_LOG("change line", it->second + L" (in line) " + std::to_wstring(it->first));
+		int line_n = it->first;
+		std::wstring* source_str = &(it->second);
+		int size = 0;
+		char* str_to_write;
+		if (codepage == CP_UTF16BE){
+			size = source_str->size()*2;
+			str_to_write = new char[size + 2];
+			memcpy(str_to_write, reinterpret_cast<const char*>(source_str->c_str()),size);
+			str_to_write[size] = '\0'; //null terminate the string
+			str_to_write[size+1] = '\0';
+		} else if (codepage == CP_UTF16LE){ //swap bytes if little endian
+			size = source_str->size()*2;
+			str_to_write = new char[size + 2];
+			const char* source =  reinterpret_cast<const char*>(source_str->c_str());
+			for (int i = 0; i < size; i+=2){
+				str_to_write[i] = source[i+1];
+				str_to_write[i+1] = source[i];
+			}
+			str_to_write[size] = '\0'; //null terminate the string
+			str_to_write[size+1] = '\0';
+		} else {
+			size = WideCharToMultiByte(codepage, 0, source_str->c_str(), source_str->size(), NULL, 0, NULL, NULL);
+			if (size <= 0) {
+				DEBUG_LOG( "Error getting str size", GetLastError() );
+				return false;
+			}
+			str_to_write = new char[size + 1];
+			int result = WideCharToMultiByte(codepage, 0, source_str->c_str(), source_str->size(), 
+														str_to_write, size, NULL, NULL);
+			if (result <= 0) {
+				DEBUG_LOG( "Error converting from wide char", GetLastError() );
+				delete[] str_to_write; // Clean up allocated memory
+				return false;
+			}
+			str_to_write[size]= '\0';
+		}
+			int old_size = m_vLines[line_n].second - m_vLines[line_n].first;
+			changes_cvonverted[line_n] = tuple_2_sizes_and_ptr(old_size, size, str_to_write);
+	}
+
+	// calculating new size of the file
+	int lines_sizes_in_file = 0;
+	int new_lines_sizes = 0;
+	for (std::map<int, tuple_2_sizes_and_ptr>::iterator it = changes_cvonverted.begin();
+				 it != changes_cvonverted.end(); ++it) {
+		lines_sizes_in_file += std::get<0>(it->second);
+		new_lines_sizes += std::get<1>(it->second);	
+	}
+	int new_file_size = m_nFileSize - lines_sizes_in_file + new_lines_sizes;
+
+	char* buffer_to_write = new char[new_file_size];
+	char*  copy_from = m_lpcFileBuffer_copy;
+	char*  copy_to = buffer_to_write;
+	//copping data before changed line and its contents into buffer_to_write
+	for (std::map<int, tuple_2_sizes_and_ptr>::iterator it = changes_cvonverted.begin();
+				 it != changes_cvonverted.end(); ++it) {
+		int copy_count = m_vLines[it->first].first - copy_from;
+		memcpy(copy_to, copy_from, copy_count);
+		copy_to += copy_count;
+		memcpy(copy_to, std::get<2>(it->second), std::get<1>(it->second));
+		copy_to += std::get<1>(it->second);
+		copy_from = m_vLines[it->first].second;
+	}
+	//copping data after the last changed line
+	int copy_count = m_lpcFileBuffer_copy + m_nFileSize - copy_from;
+	memcpy(copy_to, copy_from, copy_count);
+	
+	//freeing memory (deleting converted lines)
+	for (std::map<int, tuple_2_sizes_and_ptr>::iterator it = changes_cvonverted.begin();
+				 it != changes_cvonverted.end(); ++it) {
+		delete[] std::get<2>(it->second);
+	}
+	
+	//writing data
+	HANDLE hFile = CreateFile(m_sFilename.c_str(),
+		GENERIC_WRITE,			// Desired access
+		0,						// Share mode
+		NULL,					// Security attributes
+		CREATE_ALWAYS,		  	// Creation disposition
+		FILE_ATTRIBUTE_NORMAL,	// File attributes
+		NULL	 );
+	DWORD bytesWritten = 0;
+	if (!WriteFile(hFile, buffer_to_write, new_file_size, &bytesWritten, NULL)) {
+		CloseHandle(hFile);
+		return false;
+	}
+	
+	//freeing resources 
+	CloseHandle(hFile);
+	delete[] buffer_to_write;
+	return true;
+}
 
 CDescriptionFileRW::~CDescriptionFileRW(){
 

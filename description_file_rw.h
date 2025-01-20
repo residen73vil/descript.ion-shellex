@@ -7,6 +7,8 @@
 #include <list>
 #include <vector>
 #include <sstream>
+#include <map>
+#include <tuple>
 #include "dbg.h" 
 
 #define BOM_UTF8 "\xEF\xBB\xBF"
@@ -26,6 +28,8 @@
 #define DESCRIPTION_FILE _T("descript.ion")
 
 typedef std::list< std::basic_string<TCHAR> > string_list;
+//holds initial size of a line, size of the line to write and pointer to the line (must be freed after use!)
+typedef std::tuple< size_t, size_t, char* > tuple_2_sizes_and_ptr;
 
 // Forward declaration of the interface
 class  CDescriptionFileRW
@@ -33,9 +37,12 @@ class  CDescriptionFileRW
 private:
 	char* m_lpcFileBuffer;
 	char* m_lpcFileBuffer_copy; // unchanged m_lpcFileBuffer for delete[]
+	char* m_lpcFileBuffer_to_write; // buuffer with
 	UINT m_nFileSize = 0;
-	std::vector< std::pair<char*,char*> > m_vLines;
+	std::vector< std::pair<char*,char*> > m_vLines; //line bonds in m_lpcFileBuffer
+	std::map<int,std::wstring> m_mChanges; //lines to be replaced 
 public:
+	std::wstring m_sFilename = L"";
 	UINT m_nCodepage = CP_ACP;
 	UINT m_nBitOrder = BOM_NONE_MODE;
 	UINT m_nTargetCodepage = CP_ACP;
@@ -51,8 +58,47 @@ public:
 	*/
 	UINT LookForBomInBuffer();
 	
+	/**
+	 * @brief Changes a specific line in descript.ion file.
+	 *
+	 * This function modifies the line at the specified index 
+	 * with the content provided in the `line` parameter.
+	 * The function doesn't ensure that the index is valid
+	 * before attempting to make the change.
+	 *
+	 * @param number The index of the line to be changed. This should be
+	 *               a zero-based index. If the index is out of bounds,
+	 *               the function may return false.
+	 * @param line A pointer to a std::wstring containing the new content
+	 *             for the specified line. The content will replace the
+	 *             existing line at the given index.
+	 *
+	 * @return true if the line was successfully changed; false otherwise
+	 *
+	 * @note Ensure that the `line` pointer is not null before calling
+	 *       this function, and the index is in bounds. The function 
+	 *       may also log errors if the operation fails.
+	 */
 	bool ChangeLine(int number, std::wstring* line);
 	bool SaveChanges();
+	/**
+	 * @brief Converts data to a specified codepage and saves the changes.
+	 * 
+	 * This function takes a codepage as input, converts the lines added with
+	 * ChangeLine converts them to the specified codepage, and saves the changes
+	 * to the descript.ion file (only changed lines are overvriten. The conversion 
+	 * process may involve encoding transformations, and the function will handle
+	 * any necessary memory management.
+	 *
+	 * @param codepage The codepage to which the data should be converted.
+	 *                 A Windows codepage identifier (e.g., CP_UTF8, CP_ACP).
+	 *
+	 * @return true if the conversion and saving were successful; false otherwise.
+	 *
+	 * @note Ensure that the data to be converted is properly initialized
+	 *       before calling this function. The function may also log errors
+	 *       or warnings if the conversion fails.
+	 */
 	bool ConvertAndSaveChanges(UINT codepage);
 	
 	/**
