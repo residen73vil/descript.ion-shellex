@@ -44,10 +44,11 @@ size_t CDescriptionFileRW::FindLines() {
 
 	for ( ; end < m_lpcFileBuffer + m_nFileSize; end++) {
 		if (*end == '\n') {
-			m_vLines.emplace_back(start, end);
-			start = end + 1;
-			if (*start == '\0') //fix utf16 off by 1 problem, TODO: more consistent fix
-				start=start+1;
+			//in case of big endian utf16 we have to compensate for \0 before \n by subtracting 1 from line end pointer
+			m_vLines.emplace_back(start, end -((m_nCodepage == CP_UTF16BE) ? 1 : 0) );
+			start = end + 1 ;
+			if (*start == '\0' && m_nCodepage == CP_UTF16LE){
+				start=start+1;} //compensate for \0 after \n in little endian utf16
 		} 
 	}
 	//TODO: last line seems to sometimes contain garbage, fix it
@@ -102,9 +103,7 @@ int CDescriptionFileRW::GetConvertedLine(int number, /*out*/ std::wstring* line)
 		return wstr_len;
 	//just swat bytes if BIG ENDIAN
 	}else if (m_nCodepage == CP_UTF16BE){
-		char* multiByteStr = linebonds.first-1; // -1 to compensate for start+=1 in FindLines at "\n\0"s
-		if (number == 0) multiByteStr = linebonds.first; //except for the first one, it always points tho the
-														//start of the buffer, so no compensation needed
+		char* multiByteStr = linebonds.first;
 		size_t length_in_bytes = linebonds.second - linebonds.first;
 		//TODO: check mod(length_in_bytes, 2) to make sure it is multiple of 2
 		char* swap_buffer = new char[length_in_bytes+2];
@@ -161,13 +160,13 @@ bool CDescriptionFileRW::ConvertAndSaveChanges(UINT codepage){
 		std::wstring* source_str = &(it->second);
 		int size = 0;
 		char* str_to_write;
-		if (codepage == CP_UTF16BE){
+		if (codepage == CP_UTF16LE){
 			size = source_str->size()*2;
 			str_to_write = new char[size + 2];
 			memcpy(str_to_write, reinterpret_cast<const char*>(source_str->c_str()),size);
 			str_to_write[size] = '\0'; //null terminate the string
 			str_to_write[size+1] = '\0';
-		} else if (codepage == CP_UTF16LE){ //swap bytes if little endian
+		} else if (codepage == CP_UTF16BE){ //swap bytes if big endian
 			size = source_str->size()*2;
 			str_to_write = new char[size + 2];
 			const char* source =  reinterpret_cast<const char*>(source_str->c_str());

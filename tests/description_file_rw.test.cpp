@@ -34,4 +34,28 @@ int main(){
 	str = L"54321 test";
 	test.ChangeLine(3,&str);
 	test.ConvertAndSaveChanges(CP_ACP);
+
+	test.LoadFile( L".\\Descript.UTF16LEBOM.ion" );
+	number_of_lines = test.FindLines();
+	str = L"12345 test";
+	test.ChangeLine(1,&str);
+	str = L"54321 test";
+	test.ChangeLine(3,&str);
+	test.ConvertAndSaveChanges(CP_UTF16LE);
+
+	test.LoadFile( L".\\Descript.UTF16BEBOM.ion" );
+	number_of_lines = test.FindLines();
+	str = L"12345 test";
+	test.ChangeLine(1,&str);
+	str = L"54321 test";
+	test.ChangeLine(3,&str);
+	test.ConvertAndSaveChanges(CP_UTF16BE);
+	
+	test.LoadFile( L".\\Descript.UTF8.ion" );
+	number_of_lines = test.FindLines();
+	str = L"12345 test";
+	test.ChangeLine(1,&str);
+	str = L"54321 test";
+	test.ChangeLine(3,&str);
+	test.ConvertAndSaveChanges(CP_UTF8);
 }
