@@ -15,5 +15,7 @@ int main(){
 	test.IsCommented(L"a.exe");
 	std::basic_string<TCHAR> comment;
 	test.ReadComment(L"a.exe", comment);
+	test.AddChangeComment(L"a.exe",L"test change");
+	test.SaveChanges();
 	std::wcout << comment << std::endl;
 }

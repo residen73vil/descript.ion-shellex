@@ -20,6 +20,8 @@ class  CDescriptionHandler
 private:
 	std::unordered_map<std::basic_string<TCHAR>, std::basic_string<TCHAR>> m_comments_map;
 	std::unordered_map<std::basic_string<TCHAR>, int> m_linenumber_map;
+	std::unordered_map<int, std::wstring> m_mChanges;
+	std::wstring m_filename;
 public:
 	bool LoadFile(LPCTSTR filename);
 	bool LoadPath(LPCTSTR path); //calls LoadFile("%path%\\descript.ion")
