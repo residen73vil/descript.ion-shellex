@@ -60,6 +60,9 @@ bool CDescriptionHandler::AddChangeComment(LPCTSTR filename, LPCTSTR comment)
 		int line_num = m_linenumber_map[filename];
 		std::wstring line = std::wstring(filename) + std::wstring(L" ") + std::wstring(comment);
 		m_mChanges[line_num] = line;
+	} else {
+		std::wstring line = std::wstring(filename) + std::wstring(L" ") + std::wstring(comment);
+		m_mChanges[-(++m_nCommentsAdded)] = line;
 	}
 	return true;
 }

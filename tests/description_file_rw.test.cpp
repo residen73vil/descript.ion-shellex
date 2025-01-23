@@ -33,6 +33,8 @@ int main(){
 	test.ChangeLine(1,&str);
 	str = L"54321 test";
 	test.ChangeLine(3,&str);
+	str = L"new line test";
+	test.ChangeLine(-1,&str);
 	test.ConvertAndSaveChanges(CP_ACP);
 
 	test.LoadFile( L".\\Descript.UTF16LEBOM.ion" );

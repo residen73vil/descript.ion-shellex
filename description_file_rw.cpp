@@ -192,7 +192,12 @@ bool CDescriptionFileRW::ConvertAndSaveChanges(UINT codepage){
 			}
 			str_to_write[size]= '\0';
 		}
-			int old_size = m_vLines[line_n].second - m_vLines[line_n].first;
+			int old_size = 0;
+			if (line_n >= 0){ //if line number is less then 0 then it's a new line added at the end of the file
+				old_size = m_vLines[line_n].second - m_vLines[line_n].first;
+			} else { //we need a place to add \n when dealing with new lines so add 1 (of 2 if utf16) bytes 
+				size += (codepage == CP_UTF16LE || codepage == CP_UTF16BE) ? 2 : 1; 
+			}
 			changes_cvonverted[line_n] = tuple_2_sizes_and_ptr(old_size, size, str_to_write);
 	}
 
@@ -212,16 +217,39 @@ bool CDescriptionFileRW::ConvertAndSaveChanges(UINT codepage){
 	//copping data before changed line and its contents into buffer_to_write
 	for (std::map<int, tuple_2_sizes_and_ptr>::iterator it = changes_cvonverted.begin();
 				 it != changes_cvonverted.end(); ++it) {
-		int copy_count = m_vLines[it->first].first - copy_from;
-		memcpy(copy_to, copy_from, copy_count);
-		copy_to += copy_count;
-		memcpy(copy_to, std::get<2>(it->second), std::get<1>(it->second));
-		copy_to += std::get<1>(it->second);
-		copy_from = m_vLines[it->first].second;
+		if (it->first >= 0){ 
+			int copy_count = m_vLines[it->first].first - copy_from;
+			memcpy(copy_to, copy_from, copy_count);
+			copy_to += copy_count;
+			memcpy(copy_to, std::get<2>(it->second), std::get<1>(it->second));
+			copy_to += std::get<1>(it->second);
+			copy_from = m_vLines[it->first].second;
+		}
 	}
 	//copping data after the last changed line
 	int copy_count = m_lpcFileBuffer_copy + m_nFileSize - copy_from;
 	memcpy(copy_to, copy_from, copy_count);
+
+	//adding new lines
+	copy_to += copy_count;
+	for (std::map<int, tuple_2_sizes_and_ptr>::iterator it = changes_cvonverted.begin();
+				 it != changes_cvonverted.end(); ++it) {
+		if (it->first < 0){
+			*copy_to = '\n';
+			copy_to += 1;
+			if (codepage == CP_UTF16LE){
+				*copy_to = '\0';
+				copy_to += 1;
+			}
+			if (codepage == CP_UTF16BE){
+				*copy_to = '\n';
+				*(copy_to-1) = '\0';
+				copy_to += 1;
+			}
+			memcpy(copy_to, std::get<2>(it->second), std::get<1>(it->second));
+			copy_to += std::get<1>(it->second);
+		}
+	}
 	
 	//freeing memory (deleting converted lines)
 	for (std::map<int, tuple_2_sizes_and_ptr>::iterator it = changes_cvonverted.begin();
