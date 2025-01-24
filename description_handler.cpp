@@ -28,7 +28,7 @@ bool CDescriptionHandler::SaveChanges()
 		for (std::unordered_map<int, std::wstring>::iterator it = m_mChanges.begin(); it != m_mChanges.end(); ++it){
 			file_reader.ChangeLine( it->first, &(it->second) );
 		}
-		file_reader.ConvertAndSaveChanges(CP_UTF8);
+		file_reader.ConvertAndSaveChanges(file_reader.m_nCodepage);
 	}
 	return true;
 }
@@ -61,8 +61,19 @@ bool CDescriptionHandler::AddChangeComment(LPCTSTR filename, LPCTSTR comment)
 		std::wstring line = std::wstring(filename) + std::wstring(L" ") + std::wstring(comment);
 		m_mChanges[line_num] = line;
 	} else {
+		std::wstring key = std::wstring(filename);
+		std::unordered_map<std::wstring, int>::iterator it = m_mNewLines.end();
+		if (!m_mNewLines.empty()){
+			it = m_mNewLines.find(key);
+		}
 		std::wstring line = std::wstring(filename) + std::wstring(L" ") + std::wstring(comment);
-		m_mChanges[-(++m_nCommentsAdded)] = line;
+		if ( it == m_mNewLines.end() ){
+			m_mNewLines[key] = ++m_nCommentsAdded;
+			m_mChanges[-m_nCommentsAdded] = line;
+			DEBUG_LOG(L"new comment", line);
+		}else{
+			m_mChanges[-(it->second)] = line;
+		}
 	}
 	return true;
 }

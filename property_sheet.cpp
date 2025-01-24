@@ -102,13 +102,36 @@ INT_PTR CALLBACK PropPageDlgProc ( HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM l
 	switch ( uMsg )
 		{
 		case WM_INITDIALOG:
+			SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR)lParam); //save PROPSHEETPAGE pointer
 			bRet = OnInitDialog( hwnd, lParam ); 
 		break;
 		case WM_COMMAND:
 			DEBUG_LOG("	WM_COMMAND", HIWORD(wParam))
 			DEBUG_LOG("	WM_COMMAND LOW", LOWORD(wParam))
-			if (HIWORD(wParam) == EN_CHANGE && LOWORD(wParam) == IDC_TEXT)
+			if (HIWORD(wParam) == EN_CHANGE && LOWORD(wParam) == IDC_TEXT){
+				// Get the handle to the edit control
+				HWND hEdit = (HWND)lParam; // lParam contains the handle to the control that sent the message
+
+				// Retrieve the PROPSHEETPAGE pointer 
+				PROPSHEETPAGE* psp = (PROPSHEETPAGE*)GetWindowLongPtr(hwnd, GWLP_USERDATA);
+				std::basic_string<TCHAR> *fname = (std::basic_string<TCHAR>*)(psp->lParam);
+				
+				// Get the length of the text in the edit control
+				int length = GetWindowTextLength(hEdit);
+
+				// Allocate a buffer to hold the text
+				wchar_t* buffer = new wchar_t[length + 1]; // +1 for the null terminator
+
+				// Retrieve the text from the edit control
+				GetWindowText(hEdit, buffer, length + 1);
+
+				//add changes
+				description->AddChangeComment(fname->c_str(),buffer);
+				delete[] buffer;
+
+				//enable apply button
 				SendMessage ( GetParent(hwnd), PSM_CHANGED, (WPARAM) hwnd, 0 );
+			}
 		break;
 		case WM_NOTIFY:
 			{
@@ -120,6 +143,7 @@ INT_PTR CALLBACK PropPageDlgProc ( HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM l
 				{
 				case PSN_APPLY:
 					DEBUG_LOG("	WM_NOTIFY", "Apply")
+					description->SaveChanges();
 					bRet = TRUE;// OnApply ( hwnd, (PSHNOTIFY*) phdr );
 				break;
 				}
