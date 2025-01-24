@@ -27,3 +27,14 @@ and start it again or just restart it, you can also use other means like holding
 
 ### Testing
 Some tests may be found in  :file_folder:*tests* folder.
+
+# Draft version is ready!
+
+Basic functionality is finally working.
+Lots of bugs remain to be fixed, error handling ought to be added, and code needs refactoring
+
+##Known issues:
+1. Last comment in the descript.ion file load with some trash at the end
+2. New comments are added 2 times what probably causes segmentation faults sometimes
+3. No "" added around filenames with spaces
+4. New lines somewhat broken and need more robust implementation  
