@@ -1,120 +1,84 @@
+#ifndef IO_WRAPPER_H
+#define IO_WRAPPER_H
+
 #include <fileapi.h>
+#include <windows.h>
+#include "dbg.h"
+
+/**
+ * @class IOWrapper
+ * @brief A class for handling input and output operations.
+ *
+ * The IOWrapper class provides a unified interface for performing
+ * various input and output operations, such as reading from and
+ * writing to files, managing buffers and also handling io errors.
+ *
+ * This class is designed to simplify the process of data
+ * manipulation and ensure efficient resource management.
+ */
+
 class IOWrapper
+
 {
+const wchar_t* ERROR_ACCESS_DENIED_MSG = L"Access denied.\n";
+const wchar_t* ERROR_DISK_FULL_MSG = L"Disk is full.\n";
+const wchar_t* ERROR_IO_DEVICE_MSG = L"I/O device error.\n";
+
+DWORD m_error = 0;
+
 public:
-	char* m_lpcFileBuffer = nullptr;
+	char* m_lpcFileBuffer = nullptr; //holds buffer with data read from the file
 
-	size_t LoadFileIntoBuffer(LPCTSTR filename, char** buffer){
-		HANDLE hFile = CreateFile(filename, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 
-										FILE_ATTRIBUTE_NORMAL, NULL);
-		
-		if (hFile == INVALID_HANDLE_VALUE) {
-			DEBUG_LOG("Error opening file", GetLastError());
-			return 0;
-		}
-		//TODO: limit file size to prevent stack overflow
-		DWORD fileSize = GetFileSize(hFile, NULL);
-		if (fileSize == INVALID_FILE_SIZE) {
-			DEBUG_LOG("LoadFileToMap:Error getting file size", GetLastError());
-			CloseHandle(hFile);
-			return 0;
-		}
+	/**
+	 * @brief Loads the contents of a file into a buffer.
+	 *
+	 * This function reads the entire contents of the specified file
+	 * and stores it in a dynamically allocated buffer. The caller is
+	 * responsible for freeing the allocated memory via GetIOErrorMsg
+	 * function of the class.
+	 *
+	 * @param filename The name of the file to be loaded. This should
+	 *                 be a valid path to an existing file.
+	 * @param buffer A pointer to a character pointer that will be
+	 *               allocated and filled with the file contents. The
+	 *               caller must free this memory after use.
+	 *
+	 * @return The size of the file in bytes if the operation was
+	 *         successful, or 0 if there was an error (e.g., file not
+	 *         found, read error).
+	 */
+	size_t LoadFileIntoBuffer(LPCTSTR filename, char** buffer);
 	
-		m_lpcFileBuffer =  new char[fileSize / sizeof(CHAR) + 1];
-		 //making copy because m_lpcFileBuffer may be changed by LookForBomInBuffer
-		DWORD bytesRead;
-		if (!ReadFile(hFile, m_lpcFileBuffer, fileSize, &bytesRead, NULL)) {
-			DEBUG_LOG("LoadFileToMap:Error reading file", GetLastError());
-			CloseHandle(hFile);
-			return 0;
-		}
-		CloseHandle(hFile);
-		*buffer = m_lpcFileBuffer;
-		return bytesRead;
-	}
+	/**
+	 * @brief Writes a buffer's contents to a specified file.
+	 *
+	 * This function takes a buffer containing data and writes it to
+	 * the specified file. If the file does not exist, it will be created.
+	 * If the file already exists, its contents will be overwritten.
+	 *
+	 * @param filename The name of the file to which the buffer will be written.
+	 *                 This should be a valid path. The function will create
+	 *                 the file if it does not exist.
+	 * @param buffer A pointer to the data buffer that contains the data to be written.
+	 * @param size The number of bytes to write from the buffer to the file.
+	 *
+	 * @return The number of bytes successfully written to the file. If the
+	 *         operation fails (e.g., due to file system errors), it may return
+	 *         a value less than `size`.
+	 */
+	size_t WriteBufferIntoFile(LPCTSTR filename, char* buffer, size_t size );
 	
-	size_t WriteBufferIntoFile(LPCTSTR filename, char* buffer, size_t size ){
-			HANDLE hFile = CreateFile(filename,
-			GENERIC_WRITE,			// Desired access
-			FILE_SHARE_READ | FILE_SHARE_WRITE,						// Share mode
-			NULL,					// Security attributes
-			CREATE_ALWAYS,		  	// Creation disposition
-			FILE_ATTRIBUTE_NORMAL,	// File attributes
-			NULL	 );
-		
-		if (hFile == INVALID_HANDLE_VALUE) {
-			DWORD error = GetLastError(); // Get the error code
-			printf("CreateFile failed. Error: %lu\n", error);
+	/**
+	 * @brief Cleans up allocated, for buffer, memory if it was allocated in LoadFileIntoBuffer.
+	 */
+	void CleanupBuffersMemory();
 	
-			// Interpret the error code
-			switch (error) {
-				case ERROR_ACCESS_DENIED:
-					DEBUG_LOG(L"Error opening file",L"Access denied.\n");
-					break;
-				case ERROR_FILE_NOT_FOUND:
-					DEBUG_LOG(L"Error opening file",L"File not found.\n");
-					break;
-				case ERROR_PATH_NOT_FOUND:
-					DEBUG_LOG(L"Error opening file",L"Path not found.\n");
-					break;
-				case ERROR_INVALID_PARAMETER:
-					DEBUG_LOG(L"Error opening file",L"Invalid parameter.\n");
-					break;
-				case ERROR_ALREADY_EXISTS:
-					DEBUG_LOG(L"Error opening file",L"File already exists.\n");
-					break;
-				case ERROR_DISK_FULL:
-					DEBUG_LOG(L"Error opening file",L"Disk is full.\n");
-					break;
-				case ERROR_SHARING_VIOLATION:
-					DEBUG_LOG(L"Error opening file",L"Sharing violation.\n");
-					break;
-				case ERROR_INVALID_HANDLE:
-					DEBUG_LOG(L"Error opening file",L"Invalid handle.\n");
-					break;
-				case ERROR_NOT_ENOUGH_MEMORY:
-					DEBUG_LOG(L"Error opening file",L"Not enough memory.\n");
-					break;
-				case ERROR_IO_DEVICE:
-					DEBUG_LOG(L"Error opening file",L"I/O device error.\n");
-					break;
-				default:
-					DEBUG_LOG(L"Error opening file",L"An unknown error occurred.\n");
-					break;
-			}
-		}
-		DWORD bytesWritten = 0;
-		if (!WriteFile(hFile, buffer, size, &bytesWritten, NULL)) {
-			DWORD error = GetLastError(); // Get the error code
-	
-			// Interpret the error code
-			switch (error) {
-				case ERROR_DISK_FULL:
-					DEBUG_LOG(L"Error opening file",L"Disk is full.\n");
-					break;
-				case ERROR_ACCESS_DENIED:
-					DEBUG_LOG(L"Error opening file",L"Access denied.\n");
-					break;
-				case ERROR_INVALID_HANDLE:
-					DEBUG_LOG(L"Error opening file",L"Invalid handle.\n");
-					break;
-				// Add more cases as needed
-				default:
-					DEBUG_LOG(L"Error opening file",L"An unknown error occurred.\n");
-					break;
-			}
-		}
-		CloseHandle(hFile);
-		return bytesWritten;
-	}
-	
-	void CleanupBuffersMemory(){
-		if (nullptr != m_lpcFileBuffer){
-			delete[] m_lpcFileBuffer;
-		}
-	}
-	
-	//LPCTSTR GetIOErrorMsg(){
+		/**
+	 * @brief Returns string containing error occurred while IO operations.
 
-	//}
+	 * @return Pointer to a string representation of IO error
+	 */
+	LPCTSTR GetIOErrorMsg();
 };
+
+#endif

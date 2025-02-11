@@ -19,7 +19,7 @@ endif
 
 
 TARGET = descript.ion-shellex.dll
-SRCS = dll_main.cpp context_menu.cpp dbg.cpp property_sheet.cpp shellext_init.cpp description_handler.cpp description_file_rw.cpp
+SRCS = dll_main.cpp context_menu.cpp dbg.cpp property_sheet.cpp shellext_init.cpp description_handler.cpp description_file_rw.cpp file_io_wrapper.cpp
 RESOURCES = resource.rc
 OBJS = $(SRCS:.cpp=.o) $(RESOURCES:.rc=.o)
 
