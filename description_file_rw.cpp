@@ -1,35 +1,8 @@
 #include "description_file_rw.h"
 
-
-
-
 bool CDescriptionFileRW::LoadFile(LPCTSTR filename) {
-	HANDLE hFile = CreateFile(filename, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 
-									FILE_ATTRIBUTE_NORMAL, NULL);
-	
-	if (hFile == INVALID_HANDLE_VALUE) {
-		DEBUG_LOG("Error opening file", GetLastError());
-		return false;
-	}
-	//TODO: limit file size to prevent stack overflow
-	DWORD fileSize = GetFileSize(hFile, NULL);
-	if (fileSize == INVALID_FILE_SIZE) {
-		DEBUG_LOG("LoadFileToMap:Error getting file size", GetLastError());
-		CloseHandle(hFile);
-		return false;
-	}
 
-	m_lpcFileBuffer =  new char[fileSize / sizeof(CHAR) + 1];
-	m_lpcFileBuffer_copy = m_lpcFileBuffer; //making copy because m_lpcFileBuffer may be changed by LookForBomInBuffer
-	DWORD bytesRead;
-	if (!ReadFile(hFile, m_lpcFileBuffer, fileSize, &bytesRead, NULL)) {
-		DEBUG_LOG("LoadFileToMap:Error reading file", GetLastError());
-		CloseHandle(hFile);
-		return false;
-	}
-	CloseHandle(hFile);
-
-	m_nFileSize = bytesRead;
+	m_nFileSize = m_file_io.LoadFileIntoBuffer(filename, &m_lpcFileBuffer);
 	m_sFilename = filename;
 	LookForBomInBuffer();
 
@@ -212,7 +185,7 @@ bool CDescriptionFileRW::ConvertAndSaveChanges(UINT codepage){
 	int new_file_size = m_nFileSize - lines_sizes_in_file + new_lines_sizes;
 
 	char* buffer_to_write = new char[new_file_size];
-	char*  copy_from = m_lpcFileBuffer_copy;
+	char*  copy_from = m_file_io.m_lpcFileBuffer;
 	char*  copy_to = buffer_to_write;
 	//copping data before changed line and its contents into buffer_to_write
 	for (std::map<int, tuple_2_sizes_and_ptr>::iterator it = changes_cvonverted.begin();
@@ -227,7 +200,7 @@ bool CDescriptionFileRW::ConvertAndSaveChanges(UINT codepage){
 		}
 	}
 	//copping data after the last changed line
-	int copy_count = m_lpcFileBuffer_copy + m_nFileSize - copy_from;
+	int copy_count = m_file_io.m_lpcFileBuffer + m_nFileSize - copy_from;
 	memcpy(copy_to, copy_from, copy_count);
 
 	//adding new lines
@@ -258,86 +231,14 @@ bool CDescriptionFileRW::ConvertAndSaveChanges(UINT codepage){
 	}
 	
 	//writing data
-	HANDLE hFile = CreateFile(m_sFilename.c_str(),
-		GENERIC_WRITE,			// Desired access
-		FILE_SHARE_READ | FILE_SHARE_WRITE,						// Share mode
-		NULL,					// Security attributes
-		CREATE_ALWAYS,		  	// Creation disposition
-		FILE_ATTRIBUTE_NORMAL,	// File attributes
-		NULL	 );
-	
-	if (hFile == INVALID_HANDLE_VALUE) {
-		DWORD error = GetLastError(); // Get the error code
-		printf("CreateFile failed. Error: %lu\n", error);
-
-		// Interpret the error code
-		switch (error) {
-			case ERROR_ACCESS_DENIED:
-				DEBUG_LOG(L"Error opening file",L"Access denied.\n");
-				break;
-			case ERROR_FILE_NOT_FOUND:
-				DEBUG_LOG(L"Error opening file",L"File not found.\n");
-				break;
-			case ERROR_PATH_NOT_FOUND:
-				DEBUG_LOG(L"Error opening file",L"Path not found.\n");
-				break;
-			case ERROR_INVALID_PARAMETER:
-				DEBUG_LOG(L"Error opening file",L"Invalid parameter.\n");
-				break;
-			case ERROR_ALREADY_EXISTS:
-				DEBUG_LOG(L"Error opening file",L"File already exists.\n");
-				break;
-			case ERROR_DISK_FULL:
-				DEBUG_LOG(L"Error opening file",L"Disk is full.\n");
-				break;
-			case ERROR_SHARING_VIOLATION:
-				DEBUG_LOG(L"Error opening file",L"Sharing violation.\n");
-				break;
-			case ERROR_INVALID_HANDLE:
-				DEBUG_LOG(L"Error opening file",L"Invalid handle.\n");
-				break;
-			case ERROR_NOT_ENOUGH_MEMORY:
-				DEBUG_LOG(L"Error opening file",L"Not enough memory.\n");
-				break;
-			case ERROR_IO_DEVICE:
-				DEBUG_LOG(L"Error opening file",L"I/O device error.\n");
-				break;
-			default:
-				DEBUG_LOG(L"Error opening file",L"An unknown error occurred.\n");
-				break;
-		}
-	}
 	DWORD bytesWritten = 0;
-	if (!WriteFile(hFile, buffer_to_write, new_file_size, &bytesWritten, NULL)) {
-		DWORD error = GetLastError(); // Get the error code
-
-		// Interpret the error code
-		switch (error) {
-			case ERROR_DISK_FULL:
-				DEBUG_LOG(L"Error opening file",L"Disk is full.\n");
-				break;
-			case ERROR_ACCESS_DENIED:
-				DEBUG_LOG(L"Error opening file",L"Access denied.\n");
-				break;
-			case ERROR_INVALID_HANDLE:
-				DEBUG_LOG(L"Error opening file",L"Invalid handle.\n");
-				break;
-			// Add more cases as needed
-			default:
-				DEBUG_LOG(L"Error opening file",L"An unknown error occurred.\n");
-				break;
-		}
-		CloseHandle(hFile);
-		return false;
-	}
+	bytesWritten = m_file_io.WriteBufferIntoFile(m_sFilename.c_str(), buffer_to_write, new_file_size);
 	
-	//freeing resources 
-	CloseHandle(hFile);
 	delete[] buffer_to_write;
 	return true;
 }
 
 CDescriptionFileRW::~CDescriptionFileRW(){
 
-	delete[]	m_lpcFileBuffer_copy;
+	m_file_io.CleanupBuffersMemory();
 }

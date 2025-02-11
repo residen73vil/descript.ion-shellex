@@ -10,6 +10,7 @@
 #include <map>
 #include <tuple>
 #include "dbg.h" 
+#include "file_io_wrapper.h"
 
 #define BOM_UTF8 "\xEF\xBB\xBF"
 #define BOM_UTF16_LE "\xFF\xFE"
@@ -36,7 +37,7 @@ class  CDescriptionFileRW
 {
 private:
 	char* m_lpcFileBuffer;
-	char* m_lpcFileBuffer_copy; // unchanged m_lpcFileBuffer for delete[]
+	IOWrapper m_file_io;
 	char* m_lpcFileBuffer_to_write; // buuffer with
 	UINT m_nFileSize = 0;
 	std::vector< std::pair<char*,char*> > m_vLines; //line bonds in m_lpcFileBuffer
