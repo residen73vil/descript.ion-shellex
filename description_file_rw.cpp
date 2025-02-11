@@ -4,9 +4,12 @@ bool CDescriptionFileRW::LoadFile(LPCTSTR filename) {
 
 	m_nFileSize = m_file_io.LoadFileIntoBuffer(filename, &m_lpcFileBuffer);
 	m_sFilename = filename;
-	LookForBomInBuffer();
-
-	return true;
+	if (m_nFileSize > 0){
+		LookForBomInBuffer();
+		return true;
+	} else {
+		return false;
+	}
 }
 
 size_t CDescriptionFileRW::FindLines() {
