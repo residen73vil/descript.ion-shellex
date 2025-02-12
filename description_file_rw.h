@@ -82,6 +82,24 @@ public:
 	 */
 	bool ChangeLine(int number, std::wstring* line);
 	bool SaveChanges();
+	
+	/**
+	 * @brief Converts lines in m_mChanges to the specified code page.
+	 *
+	 * This function takes a code page identifier and a map of changes, 
+	 * converting the changes to the specified code page format. 
+	 * The changes are represented as a map where the key is an integer 
+	 * and the value is a tuple containing two sizes and a pointer.
+	 *
+	 * @param codepage The code page to which the changes should be converted.
+	 * @param changes_converted A reference to a map that will be populated 
+	 *                          with the converted changes. The map's keys 
+	 *                          are integers, and the values are tuples 
+	 *                          containing two sizes and a pointer.
+	 *
+	 * @return true if the conversion was successful, false otherwise.
+	 */
+	bool ConvertChangesToCodePage(UINT codepage, std::map<int, tuple_2_sizes_and_ptr>& changes_cvonverted);
 	/**
 	 * @brief Converts data to a specified codepage and saves the changes.
 	 * 

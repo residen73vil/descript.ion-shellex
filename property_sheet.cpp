@@ -144,6 +144,8 @@ INT_PTR CALLBACK PropPageDlgProc ( HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM l
 				case PSN_APPLY:
 					DEBUG_LOG("	WM_NOTIFY", "Apply")
 					description->SaveChanges();
+					//TODO: press of OK causes second apply witch causes another write to the file, the bug namely is 
+					// that new comments are added two times, fix it!
 					bRet = TRUE;// OnApply ( hwnd, (PSHNOTIFY*) phdr );
 				break;
 				}
