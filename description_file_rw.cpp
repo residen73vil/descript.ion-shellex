@@ -4,9 +4,12 @@ bool CDescriptionFileRW::LoadFile(LPCTSTR filename) {
 
 	m_nFileSize = m_file_io.LoadFileIntoBuffer(filename, &m_lpcFileBuffer);
 	m_sFilename = filename;
-	LookForBomInBuffer();
-
-	return true;
+	if (m_nFileSize > 0){
+		LookForBomInBuffer();
+		return true;
+	} else {
+		return false;
+	}
 }
 
 size_t CDescriptionFileRW::FindLines() {
@@ -123,10 +126,7 @@ bool CDescriptionFileRW::ChangeLine(int number, std::wstring* line){
 	return true;
 }
 
-bool CDescriptionFileRW::ConvertAndSaveChanges(UINT codepage){
-	std::map<int, tuple_2_sizes_and_ptr> changes_cvonverted; //holds converted lines and their sizes 
-															//plus old size of corresponding line in file
-	//populating changes_cvonverted
+bool CDescriptionFileRW::ConvertChangesToCodePage(UINT codepage, std::map<int, tuple_2_sizes_and_ptr>& changes_cvonverted){
 	for (std::map<int, std::wstring>::iterator it = m_mChanges.begin(); it != m_mChanges.end(); ++it) {
 		DEBUG_LOG("change line", it->second + L" (in line) " + std::to_wstring(it->first));
 		int line_n = it->first;
@@ -168,11 +168,23 @@ bool CDescriptionFileRW::ConvertAndSaveChanges(UINT codepage){
 			int old_size = 0;
 			if (line_n >= 0){ //if line number is less then 0 then it's a new line added at the end of the file
 				old_size = m_vLines[line_n].second - m_vLines[line_n].first;
-			} else { //we need a place to add \n when dealing with new lines so add 1 (of 2 if utf16) bytes 
+			} else { //we need a place to add \n when dealing with new lines so add 1 (of 2 if utf16) bytes
+				//TODO: new page size seem to be a bit short causing overflow in the heap 
+				//		adding 4 and 2 seems to fix the problem but adds an unwanted symbol at the end
+				//		further investigation and fix are needed    
 				size += (codepage == CP_UTF16LE || codepage == CP_UTF16BE) ? 2 : 1; 
 			}
 			changes_cvonverted[line_n] = tuple_2_sizes_and_ptr(old_size, size, str_to_write);
 	}
+	return true;
+}
+
+
+bool CDescriptionFileRW::ConvertAndSaveChanges(UINT codepage){
+	std::map<int, tuple_2_sizes_and_ptr> changes_cvonverted; //holds converted lines and their sizes 
+															//plus old size of corresponding line in file
+	//populating changes_cvonverted
+	ConvertChangesToCodePage(codepage, changes_cvonverted);
 
 	// calculating new size of the file
 	int lines_sizes_in_file = 0;

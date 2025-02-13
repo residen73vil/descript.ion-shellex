@@ -1,5 +1,5 @@
 ﻿//Test description_file_rw.h
-//g++ description_file_rw.test.cpp ../description_file_rw.cpp ../dbg.cpp -D_DEBUG -DUNICODE -D_UNICODE -std=c++11 -g
+//g++ description_file_rw.test.cpp ../description_file_rw.cpp ../dbg.cpp ../file_io_wrapper.cpp -D_DEBUG -DUNICODE -D_UNICODE -std=c++11 -g
 #include "../description_file_rw.h"
 #include "windows.h"
 #include <iostream>
