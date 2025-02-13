@@ -2,7 +2,8 @@
 
 //TODO: Process several files not just one
 
-CDescriptionHandler* description;
+CDescriptionHandler* description = nullptr;
+bool are_changes_to_applay_present = false;
 
 
 HRESULT __stdcall ShellPropSheetExtComClass::QueryInterface(REFIID riid, void **ppv) {
@@ -49,11 +50,13 @@ HRESULT __stdcall ShellPropSheetExtComClass::AddPages ( LPFNADDPROPSHEETPAGE lpf
 	bool only_one_file_selected = (m_lsFiles.size() == 1) ? true : false;
 	if ( m_lsFiles.size() < 1)
 		return S_FALSE;
-	description = new CDescriptionHandler();
-	description->LoadPath(m_szPath);
+	if (nullptr == description){ //create only one CDescriptionHandler
+		description = new CDescriptionHandler();
+		description->LoadPath(m_szPath);
+	}
 	
 	
-	string_list::iterator it = m_lsFiles.begin();
+	//string_list::iterator it = m_lsFiles.begin();
 	for (string_list::iterator it =  m_lsFiles.begin(); it !=  m_lsFiles.end(); ++it) 
 	{
 		DEBUG_LOG(L"property_sheet file", *it);
@@ -131,6 +134,7 @@ INT_PTR CALLBACK PropPageDlgProc ( HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM l
 
 				//enable apply button
 				SendMessage ( GetParent(hwnd), PSM_CHANGED, (WPARAM) hwnd, 0 );
+				are_changes_to_applay_present = true;
 			}
 		break;
 		case WM_NOTIFY:
@@ -143,7 +147,13 @@ INT_PTR CALLBACK PropPageDlgProc ( HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM l
 				{
 				case PSN_APPLY:
 					DEBUG_LOG("	WM_NOTIFY", "Apply")
-					description->SaveChanges();
+					if (are_changes_to_applay_present){
+					//press of OK doesn't causes second apply due to are_changes_to_applay_present flag check but
+					//TODO: several property dialogs cause override of description, so whole architecture should be changed
+					//to accommodate for that!
+						description->SaveChanges();
+						are_changes_to_applay_present = false;
+					}
 					bRet = TRUE;// OnApply ( hwnd, (PSHNOTIFY*) phdr );
 				break;
 				}
@@ -159,7 +169,11 @@ UINT CALLBACK PropPageCallbackProc ( HWND hwnd, UINT uMsg, LPPROPSHEETPAGE ppsp 
 		if ( PSPCB_RELEASE == uMsg ){
 			DEBUG_LOG("PropPageDlgProc name is freed", *(reinterpret_cast<std::basic_string<TCHAR>*>(ppsp->lParam)));
 			delete ( reinterpret_cast<std::basic_string<TCHAR>*>(ppsp->lParam) ); // a string containing file name, is freed upon exit
-			delete description;
+			if (nullptr != description){
+				//delete only one description instance
+				delete description;
+				description = nullptr;
+			}
 		}
 
 	return 1;   // used for PSPCB_CREATE - let the page be created
