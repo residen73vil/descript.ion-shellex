@@ -54,6 +54,16 @@ bool CDescriptionHandler::IsCommented(LPCTSTR filename)
 		return false;
 }
 
+std::wstring AddQuotesIfContainsSpaces(const std::wstring& input) {
+    // Check if the string contains a space
+    if (input.find(L' ') != std::wstring::npos) {
+        // If it does, return the string with quotes
+        return L"\"" + input + L"\"";
+    }
+    // If it doesn't, return the original string
+    return input;
+}
+
 bool CDescriptionHandler::AddChangeComment(LPCTSTR filename, LPCTSTR comment)
 {
 	if ( IsCommented(filename) ){
@@ -66,7 +76,11 @@ bool CDescriptionHandler::AddChangeComment(LPCTSTR filename, LPCTSTR comment)
 		if (!m_mNewLines.empty()){
 			it = m_mNewLines.find(key);
 		}
-		std::wstring line = std::wstring(filename) + std::wstring(L" ") + std::wstring(comment);
+		//Add \" to file name if needed
+		std::wstring prepared_filename = AddQuotesIfContainsSpaces(std::wstring(filename));
+		
+		//TODO: possibility for a different separator according to settings 
+		std::wstring line = prepared_filename + std::wstring(L" ") + std::wstring(comment);
 		if ( it == m_mNewLines.end() ){
 			m_mNewLines[key] = ++m_nCommentsAdded;
 			m_mChanges[-m_nCommentsAdded] = line;
