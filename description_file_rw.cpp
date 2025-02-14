@@ -219,6 +219,7 @@ bool CDescriptionFileRW::ConvertAndSaveChanges(UINT codepage){
 	copy_to += copy_count;
 	for (std::map<int, tuple_2_sizes_and_ptr>::iterator it = changes_cvonverted.begin();
 				 it != changes_cvonverted.end(); ++it) {
+//TODO: do not add \n at the beginning of a new file 
 		if (it->first < 0){
 			*copy_to = '\n';
 			copy_to += 1;
@@ -231,9 +232,14 @@ bool CDescriptionFileRW::ConvertAndSaveChanges(UINT codepage){
 				*(copy_to-1) = '\0';
 				copy_to += 1;
 			}
-			memcpy(copy_to, std::get<2>(it->second), std::get<1>(it->second));
-			copy_to += std::get<1>(it->second);
+			char* line_to_add = std::get<2>(it->second);
+			size_t line_to_add_length = std::get<1>(it->second);
+			//compensate for \0 at the end of the string and set it to be replaced by \n
+			line_to_add_length -= ( codepage == CP_UTF16LE or codepage == CP_UTF16BE ) ? 2 : 1;
+			memcpy(copy_to, line_to_add, line_to_add_length);
+			copy_to += line_to_add_length;
 		}
+//TODO: another way of handling ends of the line is needed 
 	}
 	
 	//freeing memory (deleting converted lines)
