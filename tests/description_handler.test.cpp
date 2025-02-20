@@ -1,5 +1,5 @@
 //Test description_handler.h
-//g++ description_handler.test.cpp ../description_handler.cpp ../description_file_rw.cpp ../dbg.cpp -D_DEBUG -DUNICODE -D_UNICODE -std=c++11 -g
+//g++ description_handler.test.cpp ../description_handler.cpp ../description_file_rw.cpp ../file_io_wrapper.cpp  ../errors_and_settings.cpp ../dbg.cpp -D_DEBUG -DUNICODE -D_UNICODE -std=c++11 -g
 #include "../description_handler.h"
 #include "windows.h"
 #include <iostream>

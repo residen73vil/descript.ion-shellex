@@ -8,6 +8,7 @@ bool CDescriptionFileRW::LoadFile(LPCTSTR filename) {
 		LookForBomInBuffer();
 		return true;
 	} else {
+		m_nCodepage = CErrorsAndSettings::getInstance().new_file_default_codepage;
 		return false;
 	}
 }

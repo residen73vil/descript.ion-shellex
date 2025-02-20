@@ -11,6 +11,7 @@
 #include <tuple>
 #include "dbg.h" 
 #include "file_io_wrapper.h"
+#include "errors_and_settings.h"
 
 #define BOM_UTF8 "\xEF\xBB\xBF"
 #define BOM_UTF16_LE "\xFF\xFE"
