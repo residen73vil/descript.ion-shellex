@@ -19,7 +19,7 @@ size_t CDescriptionFileRW::FindLines() {
 	char* start = m_lpcFileBuffer;
 	char* end = m_lpcFileBuffer;
 
-	for ( ; end < m_lpcFileBuffer + m_nFileSize; end++) {
+	for ( ; end < m_lpcFileBuffer + m_nFileSizeWithoutBOM; end++) {
 		if (*end == '\n') {
 			//in case of big endian utf16 we have to compensate for \0 before \n by subtracting 1 from line end pointer
 			m_vLines.emplace_back(start, end -((m_nCodepage == CP_UTF16BE) ? 1 : 0) );
@@ -44,6 +44,7 @@ UINT CDescriptionFileRW::LookForBomInBuffer(){
 		)
 	{
 		m_lpcFileBuffer = m_lpcFileBuffer + 3; //skip BOM if found
+		m_nFileSizeWithoutBOM = m_nFileSize - 3; 
 		m_nBitOrder = BOM_UTF8_MODE;
 		m_nCodepage = CP_UTF8;
 		return  m_nBitOrder;
@@ -54,6 +55,7 @@ UINT CDescriptionFileRW::LookForBomInBuffer(){
 		)
 	{
 		m_lpcFileBuffer = m_lpcFileBuffer + 2; //skip BOM if found
+		m_nFileSizeWithoutBOM = m_nFileSize - 2;
 		m_nCodepage = CP_UTF16LE;
 		m_nBitOrder = BOM_UTF16_LE_MODE;
 		return  m_nBitOrder;
@@ -64,11 +66,13 @@ UINT CDescriptionFileRW::LookForBomInBuffer(){
 		)
 	{
 		m_lpcFileBuffer = m_lpcFileBuffer + 2; //skip BOM if found
+		m_nFileSizeWithoutBOM = m_nFileSize - 2;
 		m_nCodepage = CP_UTF16BE;
 		m_nBitOrder = BOM_UTF16_BE_MODE;
 		return  m_nBitOrder;
 	}
 	m_nBitOrder = BOM_NONE_MODE;
+	m_nFileSizeWithoutBOM = m_nFileSize;
 	return m_nBitOrder;
 }
 

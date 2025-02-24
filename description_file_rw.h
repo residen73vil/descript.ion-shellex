@@ -41,6 +41,7 @@ private:
 	IOWrapper m_file_io;
 	char* m_lpcFileBuffer_to_write; // buuffer with
 	UINT m_nFileSize = 0;
+	UINT m_nFileSizeWithoutBOM = 0;
 	std::vector< std::pair<char*,char*> > m_vLines; //line bonds in m_lpcFileBuffer
 	std::map<int,std::wstring> m_mChanges; //lines to be replaced 
 public:
