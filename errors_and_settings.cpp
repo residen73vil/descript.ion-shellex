@@ -7,7 +7,7 @@ void CErrorsAndSettings::ShowError(const wchar_t* kind, const wchar_t* msg){
 
     // Static method to get the instance of the Singleton
 CErrorsAndSettings& CErrorsAndSettings::getInstance() {
-    static CErrorsAndSettings instance; // Guaranteed to be destroyed and instantiated on first use
+	//TODO: some funky thread unsafe staff can happen here in c++ < 11, fix that for visual c++ 6.0 while porting
     return instance;
 }
 
@@ -58,3 +58,4 @@ bool CErrorsAndSettings::ConvertionError(DWORD error){
 const wchar_t* CErrorsAndSettings::ERROR_ACCESS_DENIED_MSG = L"Access denied.\n";
 const wchar_t* CErrorsAndSettings::ERROR_DISK_FULL_MSG = L"Disk is full.\n";
 const wchar_t* CErrorsAndSettings::ERROR_IO_DEVICE_MSG = L"I/O device error.\n";
+CErrorsAndSettings CErrorsAndSettings::instance;

@@ -11,10 +11,11 @@ class CErrorsAndSettings
 	static const wchar_t* ERROR_DISK_FULL_MSG;
 	static const wchar_t* ERROR_IO_DEVICE_MSG;
 	
+	static CErrorsAndSettings instance;
 
 	DWORD m_last_io_error = 0;
 	static void ShowError(const wchar_t* kind, const wchar_t* msg);
-	CErrorsAndSettings() {
+	CErrorsAndSettings(): new_file_default_codepage(CP_UTF8) {
         // Initialization code (if needed)
     }
 public:
