@@ -30,6 +30,23 @@ size_t IOWrapper::LoadFileIntoBuffer(LPCTSTR filename, char** buffer){
 	return bytesRead;
 }
 
+bool IOWrapper::CheckIfFileExists(LPCTSTR filename) {
+    // Check if the file exists
+    DWORD fileAttributes = GetFileAttributes(filename);
+    if (fileAttributes == INVALID_FILE_ATTRIBUTES) {
+        if (GetLastError() == ERROR_FILE_NOT_FOUND) {
+            // File does not exist
+            return false; // File does not exist
+        } else {
+            // Some other error occurred
+            m_error = GetLastError(); // Get the error code
+            DEBUG_LOG("GetFileAttributes failed. Error: ", m_error);
+			CErrorsAndSettings::IOError(m_error);
+            return false; // Indicate failure
+        }
+    }
+	return true;
+}
 size_t IOWrapper::WriteBufferIntoFile(LPCTSTR filename, char* buffer, size_t size ){
 		m_error = 0; //no errors yet
 		DWORD bytesWritten = 0;

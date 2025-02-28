@@ -9,22 +9,11 @@
 #include <sstream>
 #include <map>
 #include <tuple>
+#include "bom_cp_eol_utils.h"
+
 #include "dbg.h" 
 #include "file_io_wrapper.h"
 #include "errors_and_settings.h"
-
-#define BOM_UTF8 "\xEF\xBB\xBF"
-#define BOM_UTF16_LE "\xFF\xFE"
-#define BOM_UTF16_BE "\xFE\xFF"
-
-#define BOM_NONE_MODE 0
-#define BOM_UTF8_MODE 1
-#define BOM_UTF16_LE_MODE 2
-#define BOM_UTF16_BE_MODE 3
-
-//are not defined in library files, so defining them by hand
-#define CP_UTF16LE 1200
-#define CP_UTF16BE 1201
 
 
 #define DESCRIPTION_FILE _T("descript.ion")
@@ -49,6 +38,8 @@ public:
 	UINT m_nCodepage = CP_ACP;
 	UINT m_nBitOrder = BOM_NONE_MODE;
 	UINT m_nTargetCodepage = CP_ACP;
+	UINT m_nTargetBitOrder = BOM_NONE_MODE;
+	UINT m_nTargetEndOfLine = NEWLINE_WIN_MODE;
 	
 	bool LoadFile(LPCTSTR filename);
 	

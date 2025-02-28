@@ -68,7 +68,8 @@ bool CDescriptionHandler::AddChangeComment(LPCTSTR filename, LPCTSTR comment)
 {
 	if ( IsCommented(filename) ){
 		int line_num = m_linenumber_map[filename];
-		std::wstring line = std::wstring(filename) + std::wstring(L" ") + std::wstring(comment);
+		std::wstring prepared_filename = AddQuotesIfContainsSpaces(std::wstring(filename));
+		std::wstring line = prepared_filename + std::wstring(L" ") + std::wstring(comment);
 		m_mChanges[line_num] = line;
 	} else {
 		std::wstring key = std::wstring(filename);
@@ -79,7 +80,7 @@ bool CDescriptionHandler::AddChangeComment(LPCTSTR filename, LPCTSTR comment)
 		//Add \" to file name if needed
 		std::wstring prepared_filename = AddQuotesIfContainsSpaces(std::wstring(filename));
 		
-		//TODO: possibility for a different separator according to settings 
+		//TODO: possibility for a different separator according to settings in changed comments above too
 		std::wstring line = prepared_filename + std::wstring(L" ") + std::wstring(comment);
 		if ( it == m_mNewLines.end() ){
 			m_mNewLines[key] = ++m_nCommentsAdded;
@@ -130,6 +131,7 @@ bool CDescriptionHandler::LoadFileToMap(LPCTSTR &filePath) {
 			if ( pos != std::basic_string<TCHAR>::npos){
 				value.erase(pos,1); //get rid of \r at the end
 			}
+			//TODO: end line search must be redone!
 			value.erase(value.find_last_not_of(L" \t")+1); //strip spaces at the beginning
 			if (m_comments_map.count(key) > 0) {
 				DEBUG_LOG("LoadFileToMap:error in descript.ion filename mentioned several times", key );

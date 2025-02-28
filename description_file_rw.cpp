@@ -9,6 +9,8 @@ bool CDescriptionFileRW::LoadFile(LPCTSTR filename) {
 		return true;
 	} else {
 		m_nCodepage = CErrorsAndSettings::getInstance().new_file_default_codepage;
+		//TODO: meke m_nFileSizeWithoutBOM assignment more atomic so so it would not cause bugs in the future 
+		m_nFileSizeWithoutBOM = m_nFileSize;
 		return false;
 	}
 }
@@ -82,16 +84,13 @@ int CDescriptionFileRW::GetConvertedLine(int number, /*out*/ std::wstring* line)
 		size_t wstr_len = (linebonds.second - linebonds.first)/2;
 		*line = std::wstring(reinterpret_cast<wchar_t*>(linebonds.first), wstr_len);
 		return wstr_len;
-	//just swat bytes if BIG ENDIAN
+	//just swap bytes if BIG ENDIAN
 	}else if (m_nCodepage == CP_UTF16BE){
 		char* multiByteStr = linebonds.first;
 		size_t length_in_bytes = linebonds.second - linebonds.first;
 		//TODO: check mod(length_in_bytes, 2) to make sure it is multiple of 2
 		char* swap_buffer = new char[length_in_bytes+2];
-		for (int i = 0; i < length_in_bytes; i+=2){
-			swap_buffer[i] = multiByteStr[i+1];
-			swap_buffer[i+1] = multiByteStr[i];
-		}
+		swap_bytes(swap_buffer, multiByteStr, length_in_bytes);
 		swap_buffer[length_in_bytes] = '\0'; //null terminate the string
 		swap_buffer[length_in_bytes+1] = '\0';
 		
@@ -173,12 +172,7 @@ bool CDescriptionFileRW::ConvertChangesToCodePage(UINT codepage, std::map<int, t
 			int old_size = 0;
 			if (line_n >= 0){ //if line number is less then 0 then it's a new line added at the end of the file
 				old_size = m_vLines[line_n].second - m_vLines[line_n].first;
-			} else { //we need a place to add \n when dealing with new lines so add 1 (of 2 if utf16) bytes
-				//TODO: new page size seem to be a bit short causing overflow in the heap 
-				//		adding 4 and 2 seems to fix the problem but adds an unwanted symbol at the end
-				//		further investigation and fix are needed    
-				size += (codepage == CP_UTF16LE || codepage == CP_UTF16BE) ? 2 : 1; 
-			}
+			} 
 			changes_cvonverted[line_n] = tuple_2_sizes_and_ptr(old_size, size, str_to_write);
 	}
 	return true;
@@ -186,9 +180,12 @@ bool CDescriptionFileRW::ConvertChangesToCodePage(UINT codepage, std::map<int, t
 
 
 bool CDescriptionFileRW::ConvertAndSaveChanges(UINT codepage){
+	//check if the file already exists
+	bool is_new_file = !( m_file_io.CheckIfFileExists(m_sFilename.c_str()) );
+
+	//populating changes_cvonverted
 	std::map<int, tuple_2_sizes_and_ptr> changes_cvonverted; //holds converted lines and their sizes 
 															//plus old size of corresponding line in file
-	//populating changes_cvonverted
 	ConvertChangesToCodePage(codepage, changes_cvonverted);
 
 	// calculating new size of the file
@@ -197,7 +194,12 @@ bool CDescriptionFileRW::ConvertAndSaveChanges(UINT codepage){
 	for (std::map<int, tuple_2_sizes_and_ptr>::iterator it = changes_cvonverted.begin();
 				 it != changes_cvonverted.end(); ++it) {
 		lines_sizes_in_file += std::get<0>(it->second);
-		new_lines_sizes += std::get<1>(it->second);	
+		new_lines_sizes += std::get<1>(it->second);
+		if ( it->first < 0 ){ //if lines are added to the file add EndOfLine size as well
+			//of bom size if first line in a new file
+			INT bom_mode_for_line = ( ( new_lines_sizes == std::get<1>(it->second) ) ? m_nTargetBitOrder : BOM_SKIP_MODE ); 
+			new_lines_sizes += eol_size( m_nTargetEndOfLine, codepage, bom_mode_for_line );
+		}
 	}
 	int new_file_size = m_nFileSize - lines_sizes_in_file + new_lines_sizes;
 
@@ -226,21 +228,11 @@ bool CDescriptionFileRW::ConvertAndSaveChanges(UINT codepage){
 				 it != changes_cvonverted.end(); ++it) {
 //TODO: do not add \n at the beginning of a new file 
 		if (it->first < 0){
-			*copy_to = '\n';
-			copy_to += 1;
-			if (codepage == CP_UTF16LE){
-				*copy_to = '\0';
-				copy_to += 1;
-			}
-			if (codepage == CP_UTF16BE){
-				*copy_to = '\n';
-				*(copy_to-1) = '\0';
-				copy_to += 1;
-			}
+			// if first line in the file add bom instead of eol
+			INT bom_mode_for_line = ( (copy_to == buffer_to_write) ? m_nTargetBitOrder : BOM_SKIP_MODE ); 
+			copy_to += add_eol_or_bom( copy_to, m_nTargetEndOfLine, codepage, bom_mode_for_line );
 			char* line_to_add = std::get<2>(it->second);
 			size_t line_to_add_length = std::get<1>(it->second);
-			//compensate for \0 at the end of the string and set it to be replaced by \n
-			line_to_add_length -= ( codepage == CP_UTF16LE or codepage == CP_UTF16BE ) ? 2 : 1;
 			memcpy(copy_to, line_to_add, line_to_add_length);
 			copy_to += line_to_add_length;
 		}

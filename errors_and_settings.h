@@ -2,7 +2,7 @@
 #define ERRORS_AND_SETTINGS_H
 
 #include <windows.h>
-
+#include "bom_cp_eol_utils.h"
 
 class CErrorsAndSettings
 
@@ -15,7 +15,7 @@ class CErrorsAndSettings
 
 	DWORD m_last_io_error = 0;
 	static void ShowError(const wchar_t* kind, const wchar_t* msg);
-	CErrorsAndSettings(): new_file_default_codepage(CP_UTF8) {
+	CErrorsAndSettings(): new_file_default_codepage(CP_UTF8), new_file_default_BOM(BOM_UTF8_MODE) {
         // Initialization code (if needed)
     }
 public:
@@ -28,6 +28,7 @@ public:
 
 
 	UINT new_file_default_codepage = CP_UTF8;
+	UINT new_file_default_BOM = BOM_UTF8_MODE;
 	static bool IOError(DWORD error);
 	
 	bool ConvertionError(DWORD error);

@@ -29,6 +29,8 @@ DWORD m_error = 0;
 public:
 	char* m_lpcFileBuffer = nullptr; //holds buffer with data read from the file
 
+	bool CheckIfFileExists(LPCTSTR filename);
+
 	/**
 	 * @brief Loads the contents of a file into a buffer.
 	 *
