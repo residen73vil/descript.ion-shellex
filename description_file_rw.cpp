@@ -195,8 +195,9 @@ bool CDescriptionFileRW::ConvertAndSaveChanges(UINT codepage){
 		lines_sizes_in_file += std::get<0>(it->second);
 		new_lines_sizes += std::get<1>(it->second);
 		if ( it->first < 0 ){ //if lines are added to the file add EndOfLine size as well
-			//of bom size if first line in a new file
-			INT bom_mode_for_line = ( ( new_lines_sizes == std::get<1>(it->second) ) ? m_nTargetBitOrder : BOM_SKIP_MODE ); 
+			//or bom size if first line in a new file
+			INT bom_mode_for_line = ( ( new_lines_sizes == std::get<1>(it->second) && is_new_file) ? 
+																m_nTargetBitOrder : BOM_SKIP_MODE ); 
 			new_lines_sizes += eol_size( m_nTargetEndOfLine, codepage, bom_mode_for_line );
 		}
 	}
@@ -225,7 +226,6 @@ bool CDescriptionFileRW::ConvertAndSaveChanges(UINT codepage){
 	copy_to += copy_count;
 	for (std::map<int, tuple_2_sizes_and_ptr>::iterator it = changes_cvonverted.begin();
 				 it != changes_cvonverted.end(); ++it) {
-//TODO: do not add \n at the beginning of a new file 
 		if (it->first < 0){
 			// if first line in the file add bom instead of eol
 			INT bom_mode_for_line = ( (copy_to == buffer_to_write) ? m_nTargetBitOrder : BOM_SKIP_MODE ); 
@@ -235,7 +235,6 @@ bool CDescriptionFileRW::ConvertAndSaveChanges(UINT codepage){
 			memcpy(copy_to, line_to_add, line_to_add_length);
 			copy_to += line_to_add_length;
 		}
-//TODO: another way of handling ends of the line is needed 
 	}
 	
 	//freeing memory (deleting converted lines)

@@ -27,6 +27,8 @@ int main(){
 		}
 	}
 	
+	//TODO: if the line we are changing does not exist in the file it causes a crush, normally it should not happen in the real application
+	//		but should probably handle such case any ways
 	test.LoadFile( L".\\descript.ion" );
 	size_t number_of_lines = test.FindLines();
 	str = L"12345 test";
