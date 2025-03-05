@@ -69,6 +69,24 @@ size_t add_eol_or_bom(char* to, UINT mode, UINT codepage, INT is_bom = BOM_SKIP_
  */
 size_t eol_size(UINT mode, UINT codepage, INT is_bom = BOM_SKIP_MODE);
 
-char* look_for_eol(char* to, UINT mode, UINT codepage);
+/**
+ * @brief Checks for a end of line mark at "place" location and returns its size
+ *
+ * Checks for a end of line mark at "place" location and returns its size if 
+ * found else returns 0, can find '\n' (linux), '\r\n' (windows), '\r' (mac)
+ * marks in both 1 and 2 byte codepages
+ *   
+ * @param place Points to the place where to look for eol
+ * @param limit Pointer to the limit of search in order not to overshoot buffer
+ * 				size and also is used to determine if "place" points to and even
+ *				or odd byte in the buffer in order not to mistake tailing '\0' in 
+ *				Little Endian symbol for leading '\0' of Big Endian symbol
+ *
+ * @return The size of eol mark or 0 if no mark found
+ *
+ * @note An utf16 symbol U+0D0A ("Malayalam Letter Lla") can be mistaken for \r\n in 1 byte codepages
+ *
+ */
+size_t is_eol(char* place, char* limit);
 
 #endif

@@ -20,18 +20,17 @@ size_t CDescriptionFileRW::FindLines() {
 	m_vLines.clear();
 	char* start = m_lpcFileBuffer;
 	char* end = m_lpcFileBuffer;
+	char* limit = m_lpcFileBuffer + m_nFileSizeWithoutBOM;
 
-	for ( ; end < m_lpcFileBuffer + m_nFileSizeWithoutBOM; end++) {
-		if (*end == '\n') {
-			//in case of big endian utf16 we have to compensate for \0 before \n by subtracting 1 from line end pointer
-			m_vLines.emplace_back(start, end -((m_nCodepage == CP_UTF16BE) ? 1 : 0) );
-			start = end + 1 ;
-			if (*start == '\0' && m_nCodepage == CP_UTF16LE){
-				start=start+1;} //compensate for \0 after \n in little endian utf16
-		} 
+	for ( ; end < limit; ) {
+		size_t eol_len = is_eol( end, limit );
+		if ( eol_len > 0){
+			m_vLines.emplace_back(start, end );
+			end = end + eol_len;
+			start = end;
+		} else { end++;	}
 	}
-	//TODO: last line seems to sometimes contain garbage, fix it
-	if (start < end) { //add last line
+	if (start < end && start < limit) { //add last line
 		m_vLines.emplace_back(start, end);
 	}
 

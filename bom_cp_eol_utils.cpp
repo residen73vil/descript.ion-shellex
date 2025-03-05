@@ -120,6 +120,63 @@ size_t eol_size(UINT mode, UINT codepage, INT is_bom){
 	return result;
 }
 
-char* look_for_eol(char* to, UINT mode, UINT codepage){
-	return to;
+#define SPLESH_0		0b11
+#define SPLESH_n		0b10
+#define SPLESH_r		0b01
+
+#define EOL_0r0n	SPLESH_0<<6 | SPLESH_r<<4 | SPLESH_0<<2 | SPLESH_n
+#define EOL_r0n0	SPLESH_r<<6 | SPLESH_0<<4 | SPLESH_n<<2 | SPLESH_0
+#define EOL_rn		SPLESH_r<<2 | SPLESH_n
+#define EOL_0n		SPLESH_0<<2 | SPLESH_n
+#define EOL_n0		SPLESH_n<<2 | SPLESH_0
+#define EOL_n		SPLESH_n
+#define EOL_0r		SPLESH_0<<2 | SPLESH_r
+#define EOL_r0		SPLESH_r<<2 | SPLESH_0
+#define EOL_r		SPLESH_r
+
+size_t is_eol(char* place, char* limit){
+//TODO: a utf16 symbol U+0D0A ("Malayalam Letter Lla") can be mistaken for \r\n, fix that 
+	unsigned char flag_representation = 0;
+	//if approaching limit, check less then 4 next bytes to prevent buffer overshot 
+	size_t check_n = ( (limit - place) < 4 ) ? limit - place : 4;
+	for (size_t i = 0; i < check_n; i++){
+		switch (place[i]) 
+		{
+			case '\0':
+				flag_representation <<= 2;
+				flag_representation |= SPLESH_0;
+				//if first byte in sequence is \0 but not in an even position it is tailing \0 of LE symbol not leading of BE hence stop checking 
+				if (0 == i && ( (limit - place) % 2 )) {
+					 return 0;
+				}
+				continue;
+			case '\n':
+				flag_representation <<= 2;
+				flag_representation |= SPLESH_n;
+				continue;
+			case '\r':
+				flag_representation <<= 2;
+				flag_representation |= SPLESH_r;
+				continue;
+		}
+		break; //if different symbol stop search
+
+	}
+	switch (flag_representation) 
+	{
+		case EOL_0r0n:
+		case EOL_r0n0:
+			return 4;
+		case EOL_rn:
+		case EOL_0n:
+		case EOL_n0:
+		case EOL_r0:
+		case EOL_0r:
+			return 2;
+		case EOL_n:
+		case EOL_r:
+			return 1;
+		default:
+			return 0;
+	}
 }
