@@ -28,13 +28,30 @@ and start it again or just restart it, you can also use other means like holding
 ### Testing
 Some tests may be found in  :file_folder:*tests* folder.
 
-# Draft version is ready!
+# Draft version 2 is ready!
 
-Basic functionality is finally working.
-Lots of bugs remain to be fixed, error handling ought to be added, and code needs refactoring
+Basic functionality is finally working, experemntal settings and error messages singleton working.
 
-##Known issues:
-1. Last comment in the descript.ion file load with some trash at the end
-2. New comments are added 2 times what probably causes segmentation faults sometimes
-3. No "" added around filenames with spaces
-4. New lines somewhat broken and need more robust implementation  
+## Goals for now are:
+
+1. Port to 32 bits.
+2. Add more tests, and make them more automatic.
+3. Try and compile in MS Visual c++ 6.
+4. Refactor code.
+5. Make it run on win 98, win 95 if possible.
+
+## Milestones are:
+
+1. Add settings, and error messages.
+2. Polish user interface (squeeze everything into one property sheet page).
+3. Add column with comments in the explorer.
+4. Add multi line comments support, in TotalCommander and DoubleCommander style.
+5. Multi language support
+6. Release with installer and stuff. 
+
+
+## Known issues:
+
+- New file creation is not really robust.
+- There is a chance for bugs in new line detection in some codepages.
+- Parts of the app are not thread safe although it is not critical.
