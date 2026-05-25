@@ -7,8 +7,8 @@
 #include "context_menu.h"
 #include "property_sheet.h"
 #include "dbg.h"
-UINT g_cActiveComponents = 0; //counts additional noncom components of the dll that are in use
 HINSTANCE g_dll_hInstance;
+UINT g_cActiveComponents = 0; //counts additional noncom components of the dll that are in use
 //TODO: Check for memory leakage!!!
 
 

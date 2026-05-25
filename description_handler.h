@@ -29,9 +29,13 @@ public:
 	bool LoadPath(LPCTSTR path); //calls LoadFile("%path%\\descript.ion")
 	bool SaveChanges();
 	bool ReadComment(LPCTSTR filename, /*out*/ std::basic_string<TCHAR>& comment);
+	//Also checks in m_mChanges and m_mNewLines if changes are present and loads them
+	bool ReadCommentWithChanges(LPCTSTR filename, /*out*/ std::basic_string<TCHAR>& comment);
+	bool SeparateCommentAndFileName(std::basic_string<TCHAR> line,
+				/*out*/ std::basic_string<TCHAR>& filename, /*out*/ std::basic_string<TCHAR>& comment);
 	bool IsCommented(LPCTSTR filename);
 	bool AddChangeComment(LPCTSTR filename, LPCTSTR comment);
-	bool FilesWithComments(/*out*/ string_list* files); //returns files that have comments 
+	bool FilesWithComments(/*out*/ string_list* files); //returns files that have comments
 //TODO: Broken comments for non-existing files handling
 //TODO: Codepage maybe DOS OEM filenames maybe in dos format too
 //TODO: Hide descript.ion file

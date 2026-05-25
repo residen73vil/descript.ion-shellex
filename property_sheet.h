@@ -17,6 +17,10 @@
 extern HINSTANCE g_dll_hInstance;
 extern UINT g_cActiveComponents; 
 
+#define MAX_TAB_NUMBER 10
+#define MAX_TAB_LENGTH 15
+//TODO: Should probably make it an adjustable variable in options, maybe.
+
 // Define a GUID for the COM class
 //{ed730b9b-5779-4692-9e36-f7d9a4e86e06}
 //{5629ff98-e953-466d-8480-3dd3c554ab09}
@@ -65,4 +69,5 @@ UINT CALLBACK PropPageCallbackProc ( HWND hwnd, UINT uMsg, LPPROPSHEETPAGE ppsp 
 BOOL OnInitDialog ( HWND hwnd, LPARAM lParam );
 //BOOL OnApply ( HWND hwnd, PSHNOTIFY* phdr );
 
+void ShowTabPage(int iSel, HWND hwnd);
 #endif

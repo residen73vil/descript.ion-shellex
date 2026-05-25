@@ -14,18 +14,68 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 
 
 
-
-
-IDD_COMMENT_PROPPAGE DIALOGEX 0, 0, 222, 158
+// -------------------------------------------------
+// Main tab to insert into property sheet
+// -------------------------------------------------
+IDD_COMMENT_PROPPAGE DIALOGEX 0, 0, 245, 265
 STYLE DS_FIXEDSYS | WS_CHILD | WS_DISABLED | WS_CAPTION
 FONT 8, "MS Shell Dlg", 0, 0, 0x1
 BEGIN
- 	CONTROL "", 209, "STATIC", SS_LEFT | WS_CHILD | WS_VISIBLE | WS_GROUP, 5, 5, 220, 8  
-	CONTROL "", -1, "STATIC", WS_CHILD | WS_VISIBLE | 0x10, 7, 23, 220, 1 
-	CONTROL "&Comment:", -1, "STATIC", SS_LEFT | WS_CHILD | WS_VISIBLE | WS_GROUP, 5, 8, 220, 8  
-	CONTROL "comment", IDC_TEXT, "EDIT", ES_LEFT | ES_MULTILINE | WS_CHILD | WS_VISIBLE | WS_BORDER | WS_VSCROLL | WS_HSCROLL | WS_TABSTOP, 5, 27, 220, 220 
+	CONTROL "", IDC_TABCTRL, "SysTabControl32", WS_TABSTOP | WS_VISIBLE | WS_CHILD, 5, 5, 235, 255
 END
 
+// -------------------------------------------------
+// Tab with comment editor
+// -------------------------------------------------
+IDD_COMMENT DIALOGEX 0, 0, 222, 150
+STYLE WS_CHILD | WS_VISIBLE
+FONT 8, "MS Shell Dlg"
+BEGIN
+	CONTROL "comment", IDC_TEXT, "EDIT", ES_LEFT | ES_MULTILINE | WS_CHILD | WS_VISIBLE |
+		WS_BORDER | WS_VSCROLL | WS_HSCROLL | WS_TABSTOP, 5, 5, 220, 220
+END
+
+// -------------------------------------------------
+// Tab with settings
+// -------------------------------------------------
+IDD_SETTINGS DIALOGEX 0, 0, 222, 180
+STYLE WS_CHILD | WS_VISIBLE
+FONT 8, "MS Shell Dlg"
+BEGIN
+	// -----------------------------------------------------------------
+	//   BOM mark selector - a single check box
+	// -----------------------------------------------------------------
+	CONTROL "Add BOM (Unicode)", IDC_CHK_BOM, "BUTTON",
+			BS_AUTOCHECKBOX | WS_TABSTOP,
+			10, 10, 200, 12
+
+	// -----------------------------------------------------------------
+	//  Code‑page selector - a combo box (drop‑down list)
+	// -----------------------------------------------------------------
+	LTEXT   "Code page:", IDC_STATIC_CP,	10, 35, 60, 12
+	COMBOBOX IDC_COMBO_CP,				  80, 33, 110, 100,
+			CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+
+	// -----------------------------------------------------------------
+	//  New line standard - three radio buttons (mutually exclusive)
+	// -----------------------------------------------------------------
+	LTEXT   "New line handling:", IDC_STATIC_NL, 10, 65, 120, 12
+
+	CONTROL "Double cmd style (unbreakable space as new lien)", IDC_RADIO_NL_DBL, "BUTTON",
+			BS_AUTORADIOBUTTON | WS_TABSTOP,
+			20, 85, 200, 12
+	CONTROL "Total Commander style (\\n and a mark at the end)", IDC_RADIO_NL_TC, "BUTTON",
+			BS_AUTORADIOBUTTON | WS_TABSTOP,
+			20, 105, 200, 12
+	CONTROL "Old school style (single line comments only)", IDC_RADIO_NL_NONE, "BUTTON",
+			BS_AUTORADIOBUTTON | WS_TABSTOP,
+			20, 125, 200, 12
+
+	CONTROL "Clean on save (none existing files and repeats)", IDC_CHK_CLEAN, "BUTTON",
+			BS_AUTOCHECKBOX | WS_TABSTOP,
+			10, 145, 200, 12
+	LTEXT   "Current file status:", IDC_STATIC_STATUS, 10, 165, 120, 12
+END
 
 
 

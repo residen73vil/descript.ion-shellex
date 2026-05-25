@@ -45,6 +45,69 @@ bool CDescriptionHandler::ReadComment(LPCTSTR filename, /*out*/ std::basic_strin
 	}
 }
 
+bool CDescriptionHandler::ReadCommentWithChanges(LPCTSTR filename, /*out*/ std::basic_string<TCHAR>& comment)
+{
+	std::wstring key( filename );
+	//try to read the comment normally first
+	bool bRet = ReadComment(filename, comment);
+	//check if changes are present
+	//firstly in m_mChanges
+	if (m_linenumber_map.count(key)){
+		int line_num = m_linenumber_map[key];
+		if (m_mChanges.count(line_num))
+			{
+				std::basic_string<TCHAR> extractedFname;
+				std::basic_string<TCHAR> extractedComment;
+				SeparateCommentAndFileName(m_mChanges[line_num], extractedFname, extractedComment);
+				comment = extractedComment;
+				bRet = true;
+			}
+	//then in m_mNewLines
+	}else if (!m_mNewLines.empty())
+	{
+		for (std::unordered_map<std::wstring, int>::iterator it = m_mNewLines.begin(); it != m_mNewLines.end(); ++it){
+			if (it->first == key){
+				std::basic_string<TCHAR> extractedFname;
+				std::basic_string<TCHAR> extractedComment;
+				SeparateCommentAndFileName(m_mChanges[-it->second], extractedFname, extractedComment);
+				comment = extractedComment;
+				bRet = true;
+			}
+		}
+	}
+	return bRet;
+}
+bool CDescriptionHandler::SeparateCommentAndFileName(std::basic_string<TCHAR> line, /*out*/ std::basic_string<TCHAR>& filename,
+												 /*out*/ std::basic_string<TCHAR>& comment)
+{
+	size_t pos = 0;
+	if (line[0] == L'\"'){
+		pos = line.find_first_of(L'\"', 1);
+		if (pos != std::basic_string<TCHAR>::npos && pos != 2){
+			line.erase(0,1); //get rid of first \"
+			pos = pos - 1; //correct to accommodate deletions
+			line.erase(pos,1); //get rid of last \"
+		} else {
+			DEBUG_LOG("LoadFileToMap:error in descript.ion file",
+							"filename is too small/large");
+			return false; //skip broken filename
+		}
+	} else {
+		pos = line.find_first_of(L" \t");
+	}
+	if (pos != std::basic_string<TCHAR>::npos && pos != 0) {
+		filename = line.substr(0, pos);
+		comment = line.substr(pos + 1);
+		pos = comment.find_last_of(L'\r');
+		if ( pos != std::basic_string<TCHAR>::npos){
+			comment.erase(pos,1); //get rid of \r at the end
+		}
+		//TODO: end line search must be redone!
+		comment.erase(comment.find_last_not_of(L" \t")+1); //strip spaces at the beginning
+	}
+	return true;
+}
+
 bool CDescriptionHandler::IsCommented(LPCTSTR filename)
 {
 	std::wstring key( filename ); 
@@ -109,38 +172,16 @@ bool CDescriptionHandler::LoadFileToMap(LPCTSTR &filePath) {
 	for ( int i = 0; i < number_of_lines; i++){
 		file_reader.GetConvertedLine(i, &line);
 
-		size_t pos = 0;
-		if (line[0] == L'\"'){
-			pos = line.find_first_of(L'\"', 1);
-			if (pos != std::basic_string<TCHAR>::npos && pos != 2){
-				line.erase(0,1); //get rid of first \"
-				pos = pos - 1; //correct to accommodate deletions 
-				line.erase(pos,1); //get rid of last \"
-			} else {
-				DEBUG_LOG("LoadFileToMap:error in descript.ion file", 
-								"filename is too small/large");
-				continue; //skip broken filename
-			}
-		} else {
-			pos = line.find_first_of(L" \t");
+		std::basic_string<TCHAR> extractedFname;
+		std::basic_string<TCHAR> extractedComment;
+		SeparateCommentAndFileName(line, extractedFname, extractedComment);
+		if (m_comments_map.count(extractedFname) > 0) {
+			DEBUG_LOG("LoadFileToMap:error in descript.ion filename mentioned several times", extractedFname );
+			//old value will be overwritten!
+			//TODO: does nothing on non-debug builds, so add something here!
 		}
-		if (pos != std::basic_string<TCHAR>::npos && pos != 0) {
-			std::basic_string<TCHAR> key = line.substr(0, pos);
-			std::basic_string<TCHAR> value = line.substr(pos + 1);
-			pos = value.find_last_of(L'\r');
-			if ( pos != std::basic_string<TCHAR>::npos){
-				value.erase(pos,1); //get rid of \r at the end
-			}
-			//TODO: end line search must be redone!
-			value.erase(value.find_last_not_of(L" \t")+1); //strip spaces at the beginning
-			if (m_comments_map.count(key) > 0) {
-				DEBUG_LOG("LoadFileToMap:error in descript.ion filename mentioned several times", key );
-				//old value will be overwritten!
-				//TODO: does nothing on non-debug builds, so add something here!
-			}
-			m_linenumber_map[key] = i;
-			m_comments_map[key] = value;
-		}
+		m_linenumber_map[extractedFname] = i;
+		m_comments_map[extractedFname] = extractedComment;
 	}
 
 	return true;

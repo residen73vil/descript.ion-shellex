@@ -43,7 +43,7 @@ Basic functionality is finally working, experemntal settings and error messages 
 ## Milestones are:
 
 1. Add settings, and error messages.
-2. Polish user interface (squeeze everything into one property sheet page).
+2. Polish user interface.
 3. Add column with comments in the explorer.
 4. Add multi line comments support, in TotalCommander and DoubleCommander style.
 5. Multi language support
@@ -55,3 +55,6 @@ Basic functionality is finally working, experemntal settings and error messages 
 - New file creation is not really robust.
 - There is a chance for bugs in new line detection in some codepages.
 - Parts of the app are not thread safe although it is not critical.
+- Its critical opening several property dialogs causes a crush!
+- Right click menu seem to disappear withing several seconds when my extension is on and you select several files.
+(It is caused by updating selected file, but still keep an eye for it)
