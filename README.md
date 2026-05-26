@@ -43,7 +43,7 @@ Basic functionality is finally working, experemntal settings and error messages 
 ## Milestones are:
 
 1. Add settings, and error messages.
-2. Polish user interface.
+2. Polish user interface.(multi line is enabled, but not handled properly yet)
 3. Add column with comments in the explorer.
 4. Add multi line comments support, in TotalCommander and DoubleCommander style.
 5. Multi language support
