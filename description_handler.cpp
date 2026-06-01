@@ -186,3 +186,175 @@ bool CDescriptionHandler::LoadFileToMap(LPCTSTR &filePath) {
 
 	return true;
 }
+
+
+////////////////////////////////////////////////////////////////////////////////
+// Helper constants (UTF‑16 literals)
+// NOTE: 0x00A0 = non‑breaking space
+//		 0x0004 = the marker of program data in the comment
+//		 0x00C2 = program id, marks that totalcmd multi line comment format is used
+static const wchar_t NBSP   = L'\x00A0';	// doublecmd uses none breaking spare
+static const wchar_t PROG_DATA = L'\x0004';	// mark of program data
+static const wchar_t TOTALCMD_ID = L'\x00C2';	// program id (totalcmd new line)
+
+////////////////////////////////////////////////////////////////////////////////
+// Detect which mode a string is using (AUTO)
+static MultiLineStyle DetectMode(const std::wstring& s)
+{
+	// Look for the TOTALCMD marker first – it is the most specific.
+	if (s.find(L"\\n") != std::wstring::npos &&
+		s.find(PROG_DATA) != std::wstring::npos &&
+		s.find(TOTALCMD_ID) != std::wstring::npos)
+		return TOTALCMD;
+
+	// DOUBLECMD uses a non‑breaking space instead of a normal space.
+	if (s.find(NBSP) != std::wstring::npos )
+		return DOUBLECMD;
+
+	// No special sequences → NONE.
+	return NONE;
+}
+
+//TODO: Properly save Program Data and add it back in unchanged.
+//		Maybe even show it in the program some how.
+
+//==========================================================================
+// Demultilinefy - turn the encoded form into a real newline string
+//==========================================================================
+MultiLineStyle CDescriptionHandler::Demultilinefy(const std::wstring& lineIn,
+												  std::wstring& lineOut,
+												  MultiLineStyle mode)
+{
+	// Auto‑detect if requested
+	if (mode == AUTO)
+		mode = DetectMode(lineIn);
+
+	lineOut.clear();
+
+	switch (mode) {
+	case DOUBLECMD: {
+		// Replace every NBSP with a real newline.
+		lineOut.reserve(lineIn.size());
+		for (size_t i = 0; i < lineIn.size(); ++i) {
+			if (i + 1 < lineIn.size() &&
+				lineIn[i] == NBSP) {
+				lineOut.push_back(L'\r');
+				lineOut.push_back(L'\n');
+			} else {
+				lineOut.push_back(lineIn[i]);
+			}
+		}
+		break;
+	}
+
+	case TOTALCMD: {
+		// Convert the literal string "\\n" to a real newline,
+		// but **only** when the TOTALCMD terminator (\x04\xc2) is present.
+		if (lineIn.find(PROG_DATA) != std::wstring::npos &&
+			lineIn.find(TOTALCMD_ID) != std::wstring::npos) {
+
+			lineOut.reserve(lineIn.size());
+			for (size_t i = 0; i < lineIn.size(); ++i) {
+				// Detect the two‑character sequence \"\\n\"
+				if (i + 1 < lineIn.size() &&
+					lineIn[i] == L'\\' && lineIn[i + 1] == L'n') {
+					lineOut.push_back(L'\r');
+					lineOut.push_back(L'\n');
+					++i; // skip the 'n'
+				} else {
+					if (lineIn[i] == PROG_DATA) 
+						break; // stop copping if prog data is reached
+					lineOut.push_back(lineIn[i]);
+				}
+			}
+		} else {
+			// No terminator just copy unchanged.
+			lineOut = lineIn;
+		}
+		break;
+	}
+
+	case NONE:
+	case AUTO:	// AUTO will have been resolved above, fall‑through is safe
+	default:
+		lineOut = lineIn;	// plain copy
+		break;
+	}
+
+	return mode;
+}
+
+//==========================================================================
+// Multilinefy - turn a real newline string into the encoded form
+//==========================================================================
+MultiLineStyle CDescriptionHandler::Multilinefy(const std::wstring& lineIn,
+												std::wstring& lineOut,
+												MultiLineStyle mode)
+{
+	// Auto‑detect if requested (based on the *input* string, which already
+	// contains real newlines)
+	if (mode == AUTO)
+		mode = DOUBLECMD;
+
+	lineOut.clear();
+
+	switch (mode) {
+	case DOUBLECMD: {
+		// Replace every real newline with NBSP.
+		lineOut.reserve(lineIn.size());
+		for (size_t i = 0; i < lineIn.size(); ++i) {
+			if (i + 1 < lineIn.size() &&
+					lineIn[i] == L'\r' && lineIn[i+1] == L'\n'){
+				lineOut.push_back(NBSP);
+				++i; //skip \n
+			}else{
+				lineOut.push_back(lineIn[i]);
+			}
+		}
+		break;
+	}
+
+	case TOTALCMD: {
+		// Replace each real newline with the literal sequence \"\\n\".
+		// Append the required terminator (\x04\xc2) at the end.
+		bool bMultiLine = false;
+		lineOut.reserve(lineIn.size());
+		for (size_t i = 0; i < lineIn.size(); ++i) {
+			if (i + 1 < lineIn.size() &&
+					lineIn[i] == L'\r' && lineIn[i+1] == L'\n'){
+				lineOut.append(L"\\n");
+				bMultiLine = true;
+				++i; //skip \n
+			}else{
+				lineOut.push_back(lineIn[i]);
+			}
+		}
+		if (bMultiLine){ // multi line mark is only written if there are new lines
+			lineOut.push_back(PROG_DATA);
+			lineOut.push_back(TOTALCMD_ID);
+		}
+		break;
+	}
+
+	case NONE:{
+		// Replace each real newline with two spaces.
+		lineOut.reserve(lineIn.size());
+		for (size_t i = 0; i < lineIn.size(); ++i) {
+			if (i + 1 < lineIn.size() &&
+					lineIn[i] == L'\r' && lineIn[i+1] == L'\n'){
+				lineOut.append(L"  ");
+				++i; //skip \n
+			}else{
+				lineOut.push_back(lineIn[i]);
+			}
+		}
+		break;
+	}
+	case AUTO:	// AUTO resolved already
+	default:
+		lineOut = lineIn;	// plain copy
+		break;
+	}
+
+	return mode;
+}

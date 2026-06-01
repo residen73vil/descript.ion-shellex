@@ -170,8 +170,13 @@ INT_PTR CALLBACK TabControlDlgProc ( HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM
 				// Retrieve the text from the edit control
 				GetWindowText(hEdit, buffer, length + 1);
 
+				//treat new lines
+				std::basic_string<TCHAR> commentWithNewLines = buffer;
+				std::basic_string<TCHAR> comment;
+				pAttachments->description.Multilinefy(commentWithNewLines, comment, AUTO);
+
 				//add changes
-				pAttachments->description.AddChangeComment(itFileName->c_str(),buffer);
+				pAttachments->description.AddChangeComment(itFileName->c_str(),comment.c_str());
 				DEBUG_LOG("Changes in the edit happened", buffer);
 				delete[] buffer;
 
@@ -250,9 +255,11 @@ BOOL OnInitDialog ( HWND hwnd, LPARAM lParam ){
 
 	HWND hEditControl = GetDlgItem(hCommentTab, IDC_TEXT);
 	std::basic_string<TCHAR> comment;
+	std::basic_string<TCHAR> commentWithNewLines;
 	std::basic_string<TCHAR> *fname = &file_names->front();
 	if ( pAttachments->description.ReadComment( fname->c_str(), comment ) ){
-		SetWindowText(hEditControl, comment.c_str());
+		pAttachments->description.Demultilinefy(comment, commentWithNewLines, AUTO);
+		SetWindowText(hEditControl, commentWithNewLines.c_str());
 	}else{
 		SetWindowText(hEditControl, L"");
 	}
@@ -276,8 +283,10 @@ void ShowTabPage(int iSel, HWND hwnd){
 		std::advance(it, iSel);
 		DEBUG_LOG("change tab to",*it);
 		std::basic_string<TCHAR> comment;
+		std::basic_string<TCHAR> commentWithNewLines;
 		if ( pAttachments->description.ReadCommentWithChanges( it->c_str(), comment ) ){
-			SetWindowText(hEditControl, comment.c_str());
+			pAttachments->description.Demultilinefy(comment, commentWithNewLines, AUTO);
+			SetWindowText(hEditControl, commentWithNewLines.c_str());
 		}else{
 			SetWindowText(hEditControl, L"");
 		}

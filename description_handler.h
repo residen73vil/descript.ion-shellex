@@ -14,6 +14,12 @@
 
 typedef std::list< std::basic_string<TCHAR> > string_list;
 
+enum MultiLineStyle{
+	TOTALCMD,
+	DOUBLECMD,
+	AUTO,
+	NONE
+};
 // Forward declaration of the interface
 class  CDescriptionHandler
 {
@@ -31,6 +37,8 @@ public:
 	bool ReadComment(LPCTSTR filename, /*out*/ std::basic_string<TCHAR>& comment);
 	//Also checks in m_mChanges and m_mNewLines if changes are present and loads them
 	bool ReadCommentWithChanges(LPCTSTR filename, /*out*/ std::basic_string<TCHAR>& comment);
+	MultiLineStyle Demultilinefy(const std::wstring& lineIn, /*out*/ std::wstring& lineOut, MultiLineStyle mode);
+	MultiLineStyle Multilinefy(const std::wstring& lineIn, /*out*/ std::wstring& lineOut, MultiLineStyle mode);
 	bool SeparateCommentAndFileName(std::basic_string<TCHAR> line,
 				/*out*/ std::basic_string<TCHAR>& filename, /*out*/ std::basic_string<TCHAR>& comment);
 	bool IsCommented(LPCTSTR filename);
