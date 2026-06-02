@@ -5,6 +5,7 @@ struct PropSheetAttachments{
 	CDescriptionHandler description;
 	string_list file_names;
 	bool are_changes_to_applay_present;
+	std::wstring hidden_cashed_prog_data;
 };
 
 // Com object stuff
@@ -173,7 +174,9 @@ INT_PTR CALLBACK TabControlDlgProc ( HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM
 				//treat new lines
 				std::basic_string<TCHAR> commentWithNewLines = buffer;
 				std::basic_string<TCHAR> comment;
-				pAttachments->description.Multilinefy(commentWithNewLines, comment, AUTO);
+				std::basic_string<TCHAR> commentProgData;
+				pAttachments->description.Multilinefy(commentWithNewLines, comment,
+													pAttachments->hidden_cashed_prog_data, AUTO);
 
 				//add changes
 				pAttachments->description.AddChangeComment(itFileName->c_str(),comment.c_str());
@@ -256,9 +259,11 @@ BOOL OnInitDialog ( HWND hwnd, LPARAM lParam ){
 	HWND hEditControl = GetDlgItem(hCommentTab, IDC_TEXT);
 	std::basic_string<TCHAR> comment;
 	std::basic_string<TCHAR> commentWithNewLines;
+	std::basic_string<TCHAR> commentProgData;
 	std::basic_string<TCHAR> *fname = &file_names->front();
 	if ( pAttachments->description.ReadComment( fname->c_str(), comment ) ){
-		pAttachments->description.Demultilinefy(comment, commentWithNewLines, AUTO);
+		pAttachments->description.Demultilinefy(comment, commentWithNewLines,
+												pAttachments->hidden_cashed_prog_data, AUTO);
 		SetWindowText(hEditControl, commentWithNewLines.c_str());
 	}else{
 		SetWindowText(hEditControl, L"");
@@ -284,8 +289,10 @@ void ShowTabPage(int iSel, HWND hwnd){
 		DEBUG_LOG("change tab to",*it);
 		std::basic_string<TCHAR> comment;
 		std::basic_string<TCHAR> commentWithNewLines;
+		std::basic_string<TCHAR> commentProgData;
 		if ( pAttachments->description.ReadCommentWithChanges( it->c_str(), comment ) ){
-			pAttachments->description.Demultilinefy(comment, commentWithNewLines, AUTO);
+			pAttachments->description.Demultilinefy(comment, commentWithNewLines,
+													pAttachments->hidden_cashed_prog_data, AUTO);
 			SetWindowText(hEditControl, commentWithNewLines.c_str());
 		}else{
 			SetWindowText(hEditControl, L"");

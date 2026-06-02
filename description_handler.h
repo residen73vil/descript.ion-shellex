@@ -37,8 +37,10 @@ public:
 	bool ReadComment(LPCTSTR filename, /*out*/ std::basic_string<TCHAR>& comment);
 	//Also checks in m_mChanges and m_mNewLines if changes are present and loads them
 	bool ReadCommentWithChanges(LPCTSTR filename, /*out*/ std::basic_string<TCHAR>& comment);
-	MultiLineStyle Demultilinefy(const std::wstring& lineIn, /*out*/ std::wstring& lineOut, MultiLineStyle mode);
-	MultiLineStyle Multilinefy(const std::wstring& lineIn, /*out*/ std::wstring& lineOut, MultiLineStyle mode);
+	MultiLineStyle Demultilinefy(const std::wstring& lineIn, /*out*/ std::wstring& lineOut,
+								/*out*/ std::wstring& commentProgData, MultiLineStyle mode);
+	MultiLineStyle Multilinefy(const std::wstring& lineIn, /*out*/ std::wstring& lineOut,
+								const std::wstring& commentProgData, MultiLineStyle mode);
 	bool SeparateCommentAndFileName(std::basic_string<TCHAR> line,
 				/*out*/ std::basic_string<TCHAR>& filename, /*out*/ std::basic_string<TCHAR>& comment);
 	bool IsCommented(LPCTSTR filename);

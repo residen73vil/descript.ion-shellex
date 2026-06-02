@@ -202,6 +202,7 @@ static const wchar_t TOTALCMD_ID = L'\x00C2';	// program id (totalcmd new line)
 static MultiLineStyle DetectMode(const std::wstring& s)
 {
 	// Look for the TOTALCMD marker first – it is the most specific.
+	//TODO: This method of search for the mark is not robust should use another one
 	if (s.find(L"\\n") != std::wstring::npos &&
 		s.find(PROG_DATA) != std::wstring::npos &&
 		s.find(TOTALCMD_ID) != std::wstring::npos)
@@ -211,7 +212,7 @@ static MultiLineStyle DetectMode(const std::wstring& s)
 	if (s.find(NBSP) != std::wstring::npos )
 		return DOUBLECMD;
 
-	// No special sequences → NONE.
+	// No special sequences.
 	return NONE;
 }
 
@@ -222,25 +223,30 @@ static MultiLineStyle DetectMode(const std::wstring& s)
 // Demultilinefy - turn the encoded form into a real newline string
 //==========================================================================
 MultiLineStyle CDescriptionHandler::Demultilinefy(const std::wstring& lineIn,
-												  std::wstring& lineOut,
-												  MultiLineStyle mode)
+										/*out*/ std::wstring& lineOut,
+										/*out*/ std::wstring& commentProgData,
+												MultiLineStyle mode)
 {
 	// Auto‑detect if requested
 	if (mode == AUTO)
 		mode = DetectMode(lineIn);
 
 	lineOut.clear();
-
+	commentProgData.clear();
+	size_t i = 0;
 	switch (mode) {
 	case DOUBLECMD: {
 		// Replace every NBSP with a real newline.
 		lineOut.reserve(lineIn.size());
-		for (size_t i = 0; i < lineIn.size(); ++i) {
+		for (i = 0; i < lineIn.size(); ++i) {
 			if (i + 1 < lineIn.size() &&
 				lineIn[i] == NBSP) {
 				lineOut.push_back(L'\r');
 				lineOut.push_back(L'\n');
 			} else {
+				if (lineIn[i] == PROG_DATA){
+					break; // stop copping if prog data is reached
+				}
 				lineOut.push_back(lineIn[i]);
 			}
 		}
@@ -254,7 +260,7 @@ MultiLineStyle CDescriptionHandler::Demultilinefy(const std::wstring& lineIn,
 			lineIn.find(TOTALCMD_ID) != std::wstring::npos) {
 
 			lineOut.reserve(lineIn.size());
-			for (size_t i = 0; i < lineIn.size(); ++i) {
+			for (i = 0; i < lineIn.size(); ++i) {
 				// Detect the two‑character sequence \"\\n\"
 				if (i + 1 < lineIn.size() &&
 					lineIn[i] == L'\\' && lineIn[i + 1] == L'n') {
@@ -262,25 +268,40 @@ MultiLineStyle CDescriptionHandler::Demultilinefy(const std::wstring& lineIn,
 					lineOut.push_back(L'\n');
 					++i; // skip the 'n'
 				} else {
-					if (lineIn[i] == PROG_DATA) 
+					if (lineIn[i] == PROG_DATA){
 						break; // stop copping if prog data is reached
+					}
 					lineOut.push_back(lineIn[i]);
 				}
 			}
-		} else {
-			// No terminator just copy unchanged.
-			lineOut = lineIn;
-		}
-		break;
+			break;
+		} 
+		// If no totalcmd multiline mark present, proceed father to plain copy
 	}
 
 	case NONE:
 	case AUTO:	// AUTO will have been resolved above, fall‑through is safe
 	default:
-		lineOut = lineIn;	// plain copy
+		for (i = 0; i < lineIn.size(); ++i) {
+			if (lineIn[i] == PROG_DATA){
+				break; // stop copping if prog data is reached
+			}
+			lineOut.push_back(lineIn[i]);
+		}
 		break;
 	}
 
+	// The rest of the line is prog data (if any), copy it as well.
+	if ( i < lineIn.size() && lineIn[i] == PROG_DATA){
+		for (; i < lineIn.size(); i++){
+
+			if (i + 1 < lineIn.size() &&
+					lineIn[i] == PROG_DATA && lineIn[i + 1] == TOTALCMD_ID){
+				++i; // don't copy totalcmd multi line mark
+			}else{
+				commentProgData.push_back(lineIn[i]);}
+		}
+	}
 	return mode;
 }
 
@@ -288,13 +309,14 @@ MultiLineStyle CDescriptionHandler::Demultilinefy(const std::wstring& lineIn,
 // Multilinefy - turn a real newline string into the encoded form
 //==========================================================================
 MultiLineStyle CDescriptionHandler::Multilinefy(const std::wstring& lineIn,
-												std::wstring& lineOut,
+										/*out*/	std::wstring& lineOut,
+										const	std::wstring& commentProgData,
 												MultiLineStyle mode)
 {
 	// Auto‑detect if requested (based on the *input* string, which already
 	// contains real newlines)
 	if (mode == AUTO)
-		mode = DOUBLECMD;
+		mode = TOTALCMD;
 
 	lineOut.clear();
 
@@ -355,6 +377,7 @@ MultiLineStyle CDescriptionHandler::Multilinefy(const std::wstring& lineIn,
 		lineOut = lineIn;	// plain copy
 		break;
 	}
-
+	// Add prog data back in
+	lineOut.append(commentProgData);
 	return mode;
 }
