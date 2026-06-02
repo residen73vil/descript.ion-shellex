@@ -8,18 +8,13 @@
 #include <vector>
 #include <unordered_map>
 #include <sstream>
+#include "errors_and_settings.h"
 #include "dbg.h" 
 
 #define DESCRIPTION_FILE _T("descript.ion")
 
 typedef std::list< std::basic_string<TCHAR> > string_list;
 
-enum MultiLineStyle{
-	TOTALCMD,
-	DOUBLECMD,
-	AUTO,
-	NONE
-};
 // Forward declaration of the interface
 class  CDescriptionHandler
 {

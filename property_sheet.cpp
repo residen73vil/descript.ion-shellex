@@ -6,6 +6,7 @@ struct PropSheetAttachments{
 	string_list file_names;
 	bool are_changes_to_applay_present;
 	std::wstring hidden_cashed_prog_data;
+	MultiLineStyle current_line_multiline_style;
 };
 
 // Com object stuff
@@ -148,6 +149,19 @@ INT_PTR CALLBACK TabControlDlgProc ( HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM
 		case WM_COMMAND:
 			DEBUG_LOG("tubControl	WM_COMMAND", HIWORD(wParam))
 			DEBUG_LOG("tubControl	WM_COMMAND LOW", LOWORD(wParam))
+			if (HIWORD(wParam) == BN_CLICKED)				 // notification code
+				DEBUG_LOG("\t\t\t\t\t\t\t\t\tratio clicked",LOWORD(wParam));
+				switch (LOWORD(wParam)){
+				case IDC_RADIO_NL_DBL:{
+					CErrorsAndSettings::getInstance().setMultiLineStyle(DOUBLECMD);
+				break;}
+				case IDC_RADIO_NL_TC:{
+					CErrorsAndSettings::getInstance().setMultiLineStyle(TOTALCMD);
+				break;}
+				case IDC_RADIO_NL_NONE:{
+					CErrorsAndSettings::getInstance().setMultiLineStyle(NONE);
+				break;}
+				}
 			if (HIWORD(wParam) == EN_CHANGE && LOWORD(wParam) == IDC_TEXT){
 				// Get the handle to the edit control
 				HWND hEdit = (HWND)lParam; // lParam contains the handle to the control that sent the message
@@ -174,9 +188,10 @@ INT_PTR CALLBACK TabControlDlgProc ( HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM
 				//treat new lines
 				std::basic_string<TCHAR> commentWithNewLines = buffer;
 				std::basic_string<TCHAR> comment;
-				std::basic_string<TCHAR> commentProgData;
+
+				MultiLineStyle mode = CErrorsAndSettings::getInstance().getMultiLineStyle();
 				pAttachments->description.Multilinefy(commentWithNewLines, comment,
-													pAttachments->hidden_cashed_prog_data, AUTO);
+													pAttachments->hidden_cashed_prog_data, mode);
 
 				//add changes
 				pAttachments->description.AddChangeComment(itFileName->c_str(),comment.c_str());
@@ -209,6 +224,8 @@ BOOL OnInitDialog ( HWND hwnd, LPARAM lParam ){
 	HWND hSettingsTab = CreateDialog(g_dll_hInstance, MAKEINTRESOURCE(IDD_SETTINGS), hwnd, TabControlDlgProc);
 	SetWindowLongPtr(hSettingsTab, GWLP_ID, static_cast<LONG_PTR>(IDD_SETTINGS_TAB));
 
+	// Setting default ratio button in multiline style setting
+	CheckDlgButton(hSettingsTab, IDC_RADIO_NL_TC, BST_CHECKED);
 	DEBUG_LOG("\t\t\tCreation of tab pages","");
 	//creating pages in tab
 	bool only_one_file_selected = (file_names->size() == 1) ? true : false;
@@ -259,11 +276,12 @@ BOOL OnInitDialog ( HWND hwnd, LPARAM lParam ){
 	HWND hEditControl = GetDlgItem(hCommentTab, IDC_TEXT);
 	std::basic_string<TCHAR> comment;
 	std::basic_string<TCHAR> commentWithNewLines;
-	std::basic_string<TCHAR> commentProgData;
 	std::basic_string<TCHAR> *fname = &file_names->front();
 	if ( pAttachments->description.ReadComment( fname->c_str(), comment ) ){
-		pAttachments->description.Demultilinefy(comment, commentWithNewLines,
-												pAttachments->hidden_cashed_prog_data, AUTO);
+		MultiLineStyle mode = CErrorsAndSettings::getInstance().getMultiLineStyle();
+		pAttachments->current_line_multiline_style =
+				pAttachments->description.Demultilinefy(comment, commentWithNewLines,
+										pAttachments->hidden_cashed_prog_data, mode);
 		SetWindowText(hEditControl, commentWithNewLines.c_str());
 	}else{
 		SetWindowText(hEditControl, L"");
@@ -289,10 +307,11 @@ void ShowTabPage(int iSel, HWND hwnd){
 		DEBUG_LOG("change tab to",*it);
 		std::basic_string<TCHAR> comment;
 		std::basic_string<TCHAR> commentWithNewLines;
-		std::basic_string<TCHAR> commentProgData;
 		if ( pAttachments->description.ReadCommentWithChanges( it->c_str(), comment ) ){
-			pAttachments->description.Demultilinefy(comment, commentWithNewLines,
-													pAttachments->hidden_cashed_prog_data, AUTO);
+			MultiLineStyle mode = CErrorsAndSettings::getInstance().getMultiLineStyle();
+			pAttachments->current_line_multiline_style =
+					pAttachments->description.Demultilinefy(comment, commentWithNewLines,
+											pAttachments->hidden_cashed_prog_data, mode);
 			SetWindowText(hEditControl, commentWithNewLines.c_str());
 		}else{
 			SetWindowText(hEditControl, L"");

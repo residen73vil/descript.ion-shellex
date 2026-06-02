@@ -59,3 +59,19 @@ const wchar_t* CErrorsAndSettings::ERROR_ACCESS_DENIED_MSG = L"Access denied.\n"
 const wchar_t* CErrorsAndSettings::ERROR_DISK_FULL_MSG = L"Disk is full.\n";
 const wchar_t* CErrorsAndSettings::ERROR_IO_DEVICE_MSG = L"I/O device error.\n";
 CErrorsAndSettings CErrorsAndSettings::instance;
+
+
+
+
+void CErrorsAndSettings::setMultiLineStyle(MultiLineStyle mode){
+	EnterCriticalSection(&cs);
+	m_eMultiLineStyle = mode;
+	LeaveCriticalSection(&cs);
+}
+MultiLineStyle CErrorsAndSettings::getMultiLineStyle(){
+	MultiLineStyle eRet;
+	EnterCriticalSection(&cs);
+	eRet = m_eMultiLineStyle;
+	LeaveCriticalSection(&cs);
+	return eRet;
+}
