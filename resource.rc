@@ -59,10 +59,13 @@ BEGIN
 	// -----------------------------------------------------------------
 	//  New line standard - three radio buttons (mutually exclusive)
 	// -----------------------------------------------------------------
-	LTEXT   "New line handling:", IDC_STATIC_NL, 10, 65, 120, 12
+	LTEXT   "New line handling:", IDC_STATIC_NL, 10, 55, 120, 12
 
-	CONTROL "Double cmd style (unbreakable space as new lien)", IDC_RADIO_NL_DBL, "BUTTON",
+	CONTROL "Auto (auto detect)", IDC_RADIO_NL_AUTO, "BUTTON",
 			BS_AUTORADIOBUTTON | WS_TABSTOP| WS_GROUP,
+			20, 65, 200, 12
+	CONTROL "Double cmd style (unbreakable space as new line)", IDC_RADIO_NL_DBL, "BUTTON",
+			BS_AUTORADIOBUTTON | WS_TABSTOP,
 			20, 85, 200, 12
 	CONTROL "Total Commander style (\\n and a mark at the end)", IDC_RADIO_NL_TC, "BUTTON",
 			BS_AUTORADIOBUTTON | WS_TABSTOP,

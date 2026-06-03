@@ -63,15 +63,15 @@ CErrorsAndSettings CErrorsAndSettings::instance;
 
 
 
-void CErrorsAndSettings::setMultiLineStyle(MultiLineStyle mode){
+void CErrorsAndSettings::setSettings(const CSettings &_settings){
 	EnterCriticalSection(&cs);
-	m_eMultiLineStyle = mode;
+	settings = _settings;
 	LeaveCriticalSection(&cs);
 }
-MultiLineStyle CErrorsAndSettings::getMultiLineStyle(){
-	MultiLineStyle eRet;
+CSettings CErrorsAndSettings::getSettings(){
+	CSettings eRet;
 	EnterCriticalSection(&cs);
-	eRet = m_eMultiLineStyle;
+	eRet = settings;
 	LeaveCriticalSection(&cs);
 	return eRet;
 }

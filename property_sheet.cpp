@@ -4,9 +4,11 @@
 struct PropSheetAttachments{
 	CDescriptionHandler description;
 	string_list file_names;
-	bool are_changes_to_applay_present;
+	bool are_changes_to_apply_present;
+	bool are_settings_to_apply_present;
 	std::wstring hidden_cashed_prog_data;
 	MultiLineStyle current_line_multiline_style;
+	CSettings settings;
 };
 
 // Com object stuff
@@ -112,9 +114,13 @@ INT_PTR CALLBACK PropPageDlgProc ( HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM l
 				case PSN_APPLY:{
 					DEBUG_LOG("	WM_NOTIFY", "Apply")
 					PropSheetAttachments *pAttachments = (PropSheetAttachments*)GetWindowLongPtr(hwnd, GWLP_USERDATA);
-					if (pAttachments->are_changes_to_applay_present){
+					if (pAttachments->are_changes_to_apply_present){
 						pAttachments->description.SaveChanges();
-						pAttachments->are_changes_to_applay_present = false;
+						pAttachments->are_changes_to_apply_present = false;
+					}
+					if (pAttachments->are_settings_to_apply_present){
+						CErrorsAndSettings::getInstance().setSettings(pAttachments->settings);
+						pAttachments->are_settings_to_apply_present = false;
 					}
 					bRet = TRUE;// OnApply ( hwnd, (PSHNOTIFY*) phdr );
 				}
@@ -149,19 +155,31 @@ INT_PTR CALLBACK TabControlDlgProc ( HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM
 		case WM_COMMAND:
 			DEBUG_LOG("tubControl	WM_COMMAND", HIWORD(wParam))
 			DEBUG_LOG("tubControl	WM_COMMAND LOW", LOWORD(wParam))
-			if (HIWORD(wParam) == BN_CLICKED)				 // notification code
+			if (HIWORD(wParam) == BN_CLICKED){
 				DEBUG_LOG("\t\t\t\t\t\t\t\t\tratio clicked",LOWORD(wParam));
+				HWND hPropertySheet = GetParent(hwnd);
+				PropSheetAttachments* pAttachments = (PropSheetAttachments*) GetWindowLongPtr(hPropertySheet, GWLP_USERDATA);
 				switch (LOWORD(wParam)){
+				case IDC_RADIO_NL_AUTO:{
+					pAttachments->settings.MultiLineStyle = AUTO;
+				break;}
 				case IDC_RADIO_NL_DBL:{
-					CErrorsAndSettings::getInstance().setMultiLineStyle(DOUBLECMD);
+					pAttachments->settings.MultiLineStyle = DOUBLECMD;
 				break;}
 				case IDC_RADIO_NL_TC:{
-					CErrorsAndSettings::getInstance().setMultiLineStyle(TOTALCMD);
+					pAttachments->settings.MultiLineStyle = TOTALCMD;
 				break;}
 				case IDC_RADIO_NL_NONE:{
-					CErrorsAndSettings::getInstance().setMultiLineStyle(NONE);
+					pAttachments->settings.MultiLineStyle = NONE;
 				break;}
 				}
+				//enable apply button
+				if (LOWORD(wParam) >= IDC_RADIO_NL_AUTO && LOWORD(wParam) <= IDC_RADIO_NL_NONE){
+					HWND hParentOfPropSheet = GetParent(hPropertySheet);
+					SendMessage ( hParentOfPropSheet, PSM_CHANGED, (WPARAM) hPropertySheet, 0 );
+					pAttachments->are_settings_to_apply_present = true;
+				}
+			}
 			if (HIWORD(wParam) == EN_CHANGE && LOWORD(wParam) == IDC_TEXT){
 				// Get the handle to the edit control
 				HWND hEdit = (HWND)lParam; // lParam contains the handle to the control that sent the message
@@ -186,12 +204,18 @@ INT_PTR CALLBACK TabControlDlgProc ( HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM
 				GetWindowText(hEdit, buffer, length + 1);
 
 				//treat new lines
+				MultiLineStyle mode;
+				if (pAttachments->settings.MultiLineStyle == AUTO){
+					mode = pAttachments->current_line_multiline_style;
+				}else{
+					mode = pAttachments->settings.MultiLineStyle;
+				}
 				std::basic_string<TCHAR> commentWithNewLines = buffer;
 				std::basic_string<TCHAR> comment;
 
-				MultiLineStyle mode = CErrorsAndSettings::getInstance().getMultiLineStyle();
 				pAttachments->description.Multilinefy(commentWithNewLines, comment,
-													pAttachments->hidden_cashed_prog_data, mode);
+													pAttachments->hidden_cashed_prog_data,
+													mode);
 
 				//add changes
 				pAttachments->description.AddChangeComment(itFileName->c_str(),comment.c_str());
@@ -202,7 +226,7 @@ INT_PTR CALLBACK TabControlDlgProc ( HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM
 				HWND prop_sheet_that_changed = GetParent(hwnd);
 				HWND parent_that_prop_sheet = GetParent(prop_sheet_that_changed );
 				SendMessage ( parent_that_prop_sheet, PSM_CHANGED, (WPARAM) prop_sheet_that_changed, 0 );
-				pAttachments->are_changes_to_applay_present = true;
+				pAttachments->are_changes_to_apply_present = true;
 
 			}
 		break;
@@ -224,10 +248,10 @@ BOOL OnInitDialog ( HWND hwnd, LPARAM lParam ){
 	HWND hSettingsTab = CreateDialog(g_dll_hInstance, MAKEINTRESOURCE(IDD_SETTINGS), hwnd, TabControlDlgProc);
 	SetWindowLongPtr(hSettingsTab, GWLP_ID, static_cast<LONG_PTR>(IDD_SETTINGS_TAB));
 
-	// Setting default ratio button in multiline style setting
-	CheckDlgButton(hSettingsTab, IDC_RADIO_NL_TC, BST_CHECKED);
 	DEBUG_LOG("\t\t\tCreation of tab pages","");
-	//creating pages in tab
+	// -------------------------------------------------
+	// Creating pages in tab
+	// -------------------------------------------------
 	bool only_one_file_selected = (file_names->size() == 1) ? true : false;
 	UINT nTab = 0;
 	for (string_list::iterator it =  file_names->begin(); it !=  file_names->end(); ++it)
@@ -243,15 +267,37 @@ BOOL OnInitDialog ( HWND hwnd, LPARAM lParam ){
 		nTab++;
 		if (nTab > MAX_TAB_NUMBER) break;
 	}
+
+	// -------------------------------------------------
+	// Creating settings tab
+	// -------------------------------------------------
 	tie.pszText = _T("Settings");
 	TabCtrl_InsertItem(hTabControl, MAX_TAB_NUMBER+1, &tie);
+	//loading settings
+	pAttachments->settings = CErrorsAndSettings::getInstance().getSettings();
+	// Setting default ratio button in multiline style setting
+	switch (pAttachments->settings.MultiLineStyle){
+		case DOUBLECMD:
+			CheckDlgButton(hSettingsTab, IDC_RADIO_NL_DBL, BST_CHECKED);
+		break;
+		case TOTALCMD:
+			CheckDlgButton(hSettingsTab, IDC_RADIO_NL_TC, BST_CHECKED);
+		break;
+		case NONE:
+			CheckDlgButton(hSettingsTab, IDC_RADIO_NL_NONE, BST_CHECKED);
+		break;
+		case AUTO:
+		default:
+			CheckDlgButton(hSettingsTab, IDC_RADIO_NL_AUTO, BST_CHECKED);
+		break;
+	}
 
 	// Attach number of pages to the tab control
 	//SetWindowLongPtr(hTabControl, GWLP_USERDATA, (LONG_PTR)nTab);
 	// Attach array of file names to the property sheet
 	SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR)pAttachments);
 	// -------------------------------------------------
-	// 3. Position them inside the tab’s client rectangle
+	// Position them inside the tab’s client rectangle
 	// -------------------------------------------------
 	RECT rcTab;
 	GetClientRect(hTabControl, &rcTab);				// tab’s client area (no border)
@@ -278,10 +324,10 @@ BOOL OnInitDialog ( HWND hwnd, LPARAM lParam ){
 	std::basic_string<TCHAR> commentWithNewLines;
 	std::basic_string<TCHAR> *fname = &file_names->front();
 	if ( pAttachments->description.ReadComment( fname->c_str(), comment ) ){
-		MultiLineStyle mode = CErrorsAndSettings::getInstance().getMultiLineStyle();
 		pAttachments->current_line_multiline_style =
 				pAttachments->description.Demultilinefy(comment, commentWithNewLines,
-										pAttachments->hidden_cashed_prog_data, mode);
+										pAttachments->hidden_cashed_prog_data,
+										pAttachments->settings.MultiLineStyle);
 		SetWindowText(hEditControl, commentWithNewLines.c_str());
 	}else{
 		SetWindowText(hEditControl, L"");
@@ -308,10 +354,10 @@ void ShowTabPage(int iSel, HWND hwnd){
 		std::basic_string<TCHAR> comment;
 		std::basic_string<TCHAR> commentWithNewLines;
 		if ( pAttachments->description.ReadCommentWithChanges( it->c_str(), comment ) ){
-			MultiLineStyle mode = CErrorsAndSettings::getInstance().getMultiLineStyle();
 			pAttachments->current_line_multiline_style =
 					pAttachments->description.Demultilinefy(comment, commentWithNewLines,
-											pAttachments->hidden_cashed_prog_data, mode);
+											pAttachments->hidden_cashed_prog_data,
+											pAttachments->settings.MultiLineStyle);
 			SetWindowText(hEditControl, commentWithNewLines.c_str());
 		}else{
 			SetWindowText(hEditControl, L"");

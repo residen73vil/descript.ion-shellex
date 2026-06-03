@@ -11,6 +11,10 @@ enum MultiLineStyle{
 	NONE
 };
 
+struct CSettings{
+	MultiLineStyle MultiLineStyle = AUTO;
+};
+
 class CErrorsAndSettings
 
 {
@@ -20,15 +24,15 @@ class CErrorsAndSettings
 
 	static CErrorsAndSettings instance;
 	CRITICAL_SECTION cs;
+	CSettings settings;
 
 	DWORD m_last_io_error = 0;
-	MultiLineStyle m_eMultiLineStyle = AUTO;
 	static void ShowError(const wchar_t* kind, const wchar_t* msg);
 	CErrorsAndSettings():	new_file_default_codepage(CP_UTF8),
-							new_file_default_BOM(BOM_UTF8_MODE),
-							m_eMultiLineStyle(AUTO)
+							new_file_default_BOM(BOM_UTF8_MODE)
 	{
 		InitializeCriticalSection(&cs);
+		//TODO: Should initialize settings from registry.
 	}
 	~CErrorsAndSettings(){
 		DeleteCriticalSection(&cs);
@@ -40,8 +44,9 @@ public:
 
 	// Static method to get the instance of the Singleton
 	static CErrorsAndSettings& getInstance();
-	void setMultiLineStyle(MultiLineStyle mode);
-	MultiLineStyle getMultiLineStyle();
+	// Settings
+	void setSettings(const CSettings &settings);
+	CSettings getSettings();
 
 	UINT new_file_default_codepage = CP_UTF8;
 	UINT new_file_default_BOM = BOM_UTF8_MODE;
