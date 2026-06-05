@@ -118,13 +118,13 @@ bool CDescriptionHandler::IsCommented(LPCTSTR filename)
 }
 
 std::wstring AddQuotesIfContainsSpaces(const std::wstring& input) {
-    // Check if the string contains a space
-    if (input.find(L' ') != std::wstring::npos) {
-        // If it does, return the string with quotes
-        return L"\"" + input + L"\"";
-    }
-    // If it doesn't, return the original string
-    return input;
+	// Check if the string contains a space
+	if (input.find(L' ') != std::wstring::npos) {
+		// If it does, return the string with quotes
+		return L"\"" + input + L"\"";
+	}
+	// If it doesn't, return the original string
+	return input;
 }
 
 bool CDescriptionHandler::AddChangeComment(LPCTSTR filename, LPCTSTR comment)
@@ -201,7 +201,7 @@ static const wchar_t TOTALCMD_ID = L'\x00C2';	// program id (totalcmd new line)
 // Detect which mode a string is using (AUTO)
 static MultiLineStyle DetectMode(const std::wstring& s)
 {
-	// Look for the TOTALCMD marker first – it is the most specific.
+	// Look for the TOTALCMD marker first - it is the most specific.
 	//TODO: This method of search for the mark is not robust should use another one
 	if (s.find(L"\\n") != std::wstring::npos &&
 		s.find(PROG_DATA) != std::wstring::npos &&

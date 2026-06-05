@@ -11,10 +11,13 @@
 #define IDD_SETTINGS_TAB				211
 
 // Settings tab controls
-#define IDC_CHK_BOM						231
-#define IDC_STATIC_CP					232
-#define IDC_COMBO_CP					233
-#define IDC_STATIC_NL					234
+#define IDC_STATIC_CP					231
+#define IDC_COMBO_CP					232
+#define IDC_STATIC_NL					233
+//WARNING: Checkboxes and ratio buttons should be in sequential order so that
+// if (LOWORD(wParam) >= IDC_CHK_BOM && LOWORD(wParam) <= IDC_RADIO_NL_NONE)
+// in property_sheet.cpp works alright.
+#define IDC_CHK_BOM						234
 #define IDC_RADIO_NL_AUTO				235
 #define IDC_RADIO_NL_DBL				236
 #define IDC_RADIO_NL_TC					237

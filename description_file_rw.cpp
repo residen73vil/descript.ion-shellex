@@ -5,11 +5,20 @@ bool CDescriptionFileRW::LoadFile(LPCTSTR filename) {
 	m_nFileSize = m_file_io.LoadFileIntoBuffer(filename, &m_lpcFileBuffer);
 	m_sFilename = filename;
 	if (m_nFileSize > 0){
-		LookForBomInBuffer();
+		if (BOM_NONE_MODE == LookForBomInBuffer())
+			m_nCodepage = CErrorsAndSettings::getInstance().getSettings().cp;
 		return true;
 	} else {
-		m_nCodepage = CErrorsAndSettings::getInstance().new_file_default_codepage;
+		m_nCodepage = CErrorsAndSettings::getInstance().getSettings().cp;
 		//TODO: meke m_nFileSizeWithoutBOM assignment more atomic so so it would not cause bugs in the future 
+		bool bom = CErrorsAndSettings::getInstance().getSettings().bom;
+		m_nBitOrder = BOM_NONE_MODE;
+		if (bom && m_nCodepage == CP_UTF8)
+			m_nBitOrder = BOM_UTF8_MODE;
+		if (bom && m_nCodepage == CP_UTF16LE)
+			m_nBitOrder = BOM_UTF16_LE_MODE;
+		if (bom && m_nCodepage == CP_UTF16BE)
+			m_nBitOrder = BOM_UTF16_BE_MODE;
 		m_nFileSizeWithoutBOM = m_nFileSize;
 		return false;
 	}

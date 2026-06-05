@@ -13,6 +13,8 @@ enum MultiLineStyle{
 
 struct CSettings{
 	MultiLineStyle MultiLineStyle = AUTO;
+	UINT cp = CP_UTF8;
+	bool bom = true;
 };
 
 class CErrorsAndSettings

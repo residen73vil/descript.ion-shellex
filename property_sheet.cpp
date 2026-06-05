@@ -11,6 +11,17 @@ struct PropSheetAttachments{
 	CSettings settings;
 };
 
+// One entry shown in the combo box
+struct CodePageItem
+{
+    UINT    cp;          // numeric code‑page identifier (e.g. 1252)
+    std::wstring name;   // what the user sees
+};
+void FillCodePageCombo(HWND hDlg, int comboId);
+void PopulateCodePageList();
+BOOL CALLBACK CPEnumProc(LPTSTR lpCodePageString);
+void SelectCodePageCombo(HWND hDlg, int comboId,int cpId );
+static std::vector<CodePageItem> g_codePages;   // global or member of a Settings class
 // Com object stuff
 HRESULT __stdcall ShellPropSheetExtComClass::QueryInterface(REFIID riid, void **ppv) {
 	DEBUG_LOG_RIID(L"ObjectQueryPropertySheet:", riid) ;
@@ -114,13 +125,13 @@ INT_PTR CALLBACK PropPageDlgProc ( HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM l
 				case PSN_APPLY:{
 					DEBUG_LOG("	WM_NOTIFY", "Apply")
 					PropSheetAttachments *pAttachments = (PropSheetAttachments*)GetWindowLongPtr(hwnd, GWLP_USERDATA);
-					if (pAttachments->are_changes_to_apply_present){
-						pAttachments->description.SaveChanges();
-						pAttachments->are_changes_to_apply_present = false;
-					}
 					if (pAttachments->are_settings_to_apply_present){
 						CErrorsAndSettings::getInstance().setSettings(pAttachments->settings);
 						pAttachments->are_settings_to_apply_present = false;
+					}
+					if (pAttachments->are_changes_to_apply_present){
+						pAttachments->description.SaveChanges();
+						pAttachments->are_changes_to_apply_present = false;
 					}
 					bRet = TRUE;// OnApply ( hwnd, (PSHNOTIFY*) phdr );
 				}
@@ -156,7 +167,6 @@ INT_PTR CALLBACK TabControlDlgProc ( HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM
 			DEBUG_LOG("tubControl	WM_COMMAND", HIWORD(wParam))
 			DEBUG_LOG("tubControl	WM_COMMAND LOW", LOWORD(wParam))
 			if (HIWORD(wParam) == BN_CLICKED){
-				DEBUG_LOG("\t\t\t\t\t\t\t\t\tratio clicked",LOWORD(wParam));
 				HWND hPropertySheet = GetParent(hwnd);
 				PropSheetAttachments* pAttachments = (PropSheetAttachments*) GetWindowLongPtr(hPropertySheet, GWLP_USERDATA);
 				switch (LOWORD(wParam)){
@@ -172,11 +182,28 @@ INT_PTR CALLBACK TabControlDlgProc ( HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM
 				case IDC_RADIO_NL_NONE:{
 					pAttachments->settings.MultiLineStyle = NONE;
 				break;}
+				case IDC_CHK_BOM:{
+					bool isChecked = IsDlgButtonChecked(hwnd, IDC_CHK_BOM) == BST_CHECKED;
+					pAttachments->settings.bom = isChecked;
+				break;}
 				}
 				//enable apply button
-				if (LOWORD(wParam) >= IDC_RADIO_NL_AUTO && LOWORD(wParam) <= IDC_RADIO_NL_NONE){
+				if (LOWORD(wParam) >= IDC_CHK_BOM && LOWORD(wParam) <= IDC_RADIO_NL_NONE){
 					HWND hParentOfPropSheet = GetParent(hPropertySheet);
 					SendMessage ( hParentOfPropSheet, PSM_CHANGED, (WPARAM) hPropertySheet, 0 );
+					pAttachments->are_settings_to_apply_present = true;
+				}
+			}
+			if (HIWORD(wParam) == CBN_SELCHANGE && LOWORD(wParam) == IDC_COMBO_CP){
+				HWND hCombo = GetDlgItem(hwnd, IDC_COMBO_CP);
+				int sel = (int)SendMessage(hCombo, CB_GETCURSEL, 0, 0);
+				if (sel != CB_ERR){
+					HWND hPropertySheet = GetParent(hwnd);
+					PropSheetAttachments* pAttachments = (PropSheetAttachments*) GetWindowLongPtr(hPropertySheet, GWLP_USERDATA);
+					pAttachments->settings.cp = g_codePages[sel].cp;
+					HWND prop_sheet_that_changed = GetParent(hwnd);
+					HWND parent_that_prop_sheet = GetParent(prop_sheet_that_changed );
+					SendMessage ( parent_that_prop_sheet, PSM_CHANGED, (WPARAM) prop_sheet_that_changed, 0 );
 					pAttachments->are_settings_to_apply_present = true;
 				}
 			}
@@ -291,10 +318,15 @@ BOOL OnInitDialog ( HWND hwnd, LPARAM lParam ){
 			CheckDlgButton(hSettingsTab, IDC_RADIO_NL_AUTO, BST_CHECKED);
 		break;
 	}
-
-	// Attach number of pages to the tab control
-	//SetWindowLongPtr(hTabControl, GWLP_USERDATA, (LONG_PTR)nTab);
-	// Attach array of file names to the property sheet
+	// Set bom checkbox
+	CheckDlgButton(hSettingsTab, IDC_CHK_BOM, pAttachments->settings.bom ? BST_CHECKED : BST_UNCHECKED);
+	// Fill up codepage combobox
+	PopulateCodePageList();
+	FillCodePageCombo(hSettingsTab, IDC_COMBO_CP);
+	SelectCodePageCombo(hSettingsTab, IDC_COMBO_CP, pAttachments->settings.cp);
+	// -------------------------------------------------
+	// Attach attach all necessary data to the property sheet
+	// -------------------------------------------------
 	SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR)pAttachments);
 	// -------------------------------------------------
 	// Position them inside the tab’s client rectangle
@@ -362,5 +394,67 @@ void ShowTabPage(int iSel, HWND hwnd){
 		}else{
 			SetWindowText(hEditControl, L"");
 		}
+	}
+}
+
+//======================================================================================
+// Function to fill up possible code page selections
+//======================================================================================
+BOOL CALLBACK CPEnumProc(LPTSTR lpCodePageString)
+{
+	UINT cp = static_cast<UINT>(_ttoi(lpCodePageString));
+
+	// Build a readable description:
+	// - get the code‑page name via GetLocaleInfoEx (Unicode) or GetLocaleInfoA (ANSI)
+	// - fall back to just the number if the name lookup fails.
+	wchar_t cpName[64] = L"";
+
+#if defined(UNICODE)
+	// Try to get the native description (e.g. "Western European (Windows)")
+	int ret = GetLocaleInfoEx(L"en-US", LOCALE_IDEFAULTANSICODEPAGE, nullptr, 0);
+	// The LOCALE_IDEFAULTANSICODEPAGE flag does **not** give the name,
+	// so we use GetCPInfoEx which returns the code‑page description.
+	CPINFOEXW info;
+	if (GetCPInfoExW(cp, 0, &info))
+		swprintf_s(cpName, L"%s", info.CodePageName);
+	else
+		swprintf_s(cpName, L"%u", cp);
+#else
+	// ANSI version (same logic, just the W‑suffix functions are absent)
+	CPINFOEXA info;
+	if (GetCPInfoExA(cp, 0, &info))
+		swprintf_s(cpName, L"%S", info.CodePageName);
+	else
+		swprintf_s(cpName, L"%u", cp);
+#endif
+
+	g_codePages.push_back({ cp, cpName });
+	return TRUE;	// continue enumeration
+}
+
+void PopulateCodePageList()
+{
+	g_codePages.clear();
+	EnumSystemCodePages(CPEnumProc, CP_INSTALLED);
+}
+
+void FillCodePageCombo(HWND hDlg, int comboId)
+{
+	HWND hCombo = GetDlgItem(hDlg, comboId);
+	SendMessage(hCombo, CB_RESETCONTENT, 0, 0);
+
+	for (size_t i = 0; i < g_codePages.size(); ++i)
+	{
+		LRESULT idx = SendMessage(hCombo, CB_ADDSTRING, 0,
+								(LPARAM)g_codePages[i].name.c_str());
+		SendMessage(hCombo, CB_SETITEMDATA, idx, (LPARAM)g_codePages[i].cp);
+	}
+}
+
+void SelectCodePageCombo(HWND hDlg, int comboId,int cpId ){
+	HWND hCombo = GetDlgItem(hDlg, comboId);
+	for (int i = 0; i< g_codePages.size(); i++){
+		if (cpId == g_codePages[i].cp)
+			SendMessage(hCombo, CB_SETCURSEL, i, 0);
 	}
 }

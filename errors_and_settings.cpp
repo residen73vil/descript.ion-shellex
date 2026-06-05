@@ -8,7 +8,7 @@ void CErrorsAndSettings::ShowError(const wchar_t* kind, const wchar_t* msg){
     // Static method to get the instance of the Singleton
 CErrorsAndSettings& CErrorsAndSettings::getInstance() {
 	//TODO: some funky thread unsafe staff can happen here in c++ < 11, fix that for visual c++ 6.0 while porting
-    return instance;
+	return instance;
 }
 
 bool CErrorsAndSettings::IOError(DWORD error){
