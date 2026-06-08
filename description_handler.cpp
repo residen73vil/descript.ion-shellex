@@ -28,7 +28,7 @@ bool CDescriptionHandler::SaveChanges()
 		for (std::unordered_map<int, std::wstring>::iterator it = m_mChanges.begin(); it != m_mChanges.end(); ++it){
 			file_reader.ChangeLine( it->first, &(it->second) );
 		}
-		file_reader.ConvertAndSaveChanges(file_reader.m_nCodepage);
+		file_reader.ConvertAndSaveChanges(file_reader.m_nCodepage, CErrorsAndSettings::getInstance().getSettings().bom);
 	}
 	return true;
 }

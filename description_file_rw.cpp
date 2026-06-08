@@ -187,10 +187,14 @@ bool CDescriptionFileRW::ConvertChangesToCodePage(UINT codepage, std::map<int, t
 }
 
 
-bool CDescriptionFileRW::ConvertAndSaveChanges(UINT codepage){
+bool CDescriptionFileRW::ConvertAndSaveChanges(UINT codepage, bool bom){
 	//check if the file already exists
 	bool is_new_file = !( m_file_io.CheckIfFileExists(m_sFilename.c_str()) );
-
+	//set target bom
+	if (bom && is_new_file)
+	{
+		m_nTargetBitOrder = m_nBitOrder;
+	}
 	//populating changes_cvonverted
 	std::map<int, tuple_2_sizes_and_ptr> changes_cvonverted; //holds converted lines and their sizes 
 															//plus old size of corresponding line in file

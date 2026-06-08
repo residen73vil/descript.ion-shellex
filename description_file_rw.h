@@ -104,6 +104,7 @@ public:
 	 *
 	 * @param codepage The codepage to which the data should be converted.
 	 *                 A Windows codepage identifier (e.g., CP_UTF8, CP_ACP).
+	 * @param bom      Signs if we should add a bit order mark to a new file
 	 *
 	 * @return true if the conversion and saving were successful; false otherwise.
 	 *
@@ -111,7 +112,7 @@ public:
 	 *       before calling this function. The function may also log errors
 	 *       or warnings if the conversion fails.
 	 */
-	bool ConvertAndSaveChanges(UINT codepage);
+	bool ConvertAndSaveChanges(UINT codepage, bool bom);
 	
 	/**
 	* @brief Finds and counts the number of lines in a description file.
