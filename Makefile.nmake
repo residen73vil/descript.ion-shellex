@@ -1,0 +1,128 @@
+# Microsoft NMake Makefile for VC6
+# descript.ion Shell Extension DLL
+# =================================
+
+# Tools
+CC = cl.exe
+LINK = link.exe
+RC = rc.exe
+
+# Output
+TARGET = descript.ion-shellex.dll
+IMPLIB = descript.ion-shellex.lib
+
+# Source files
+CPP_SRCS1 = dll_main.cpp context_menu.cpp dbg.cpp property_sheet.cpp
+CPP_SRCS2 = $(CPP_SRCS1) shellext_init.cpp description_handler.cpp description_file_rw.cpp
+CPP_SRCS3 = $(CPP_SRCS2)          file_io_wrapper.cpp errors_and_settings.cpp bom_cp_eol_utils.cpp
+CPP_SRCS = $(CPP_SRCS3)         column_provider.cpp
+
+# Object files
+OBJS1 = dll_main.obj context_menu.obj dbg.obj property_sheet.obj
+OBJS2 = $(OBJS1) shellext_init.obj description_handler.obj description_file_rw.obj
+OBJS3 = $(OBJS2) file_io_wrapper.obj errors_and_settings.obj bom_cp_eol_utils.obj
+OBJS = $(OBJS3) column_provider.obj resource.res
+
+# Compiler flags (Win95 compatibility)
+CFLAGS1 = /nologo /c /MT /Zl /O1 /GX- /GR- /W3
+CFLAGS2 = $(CFLAGS1) /D "WIN32" /D "_WINDOWS" /D "_USRDLL"
+CFLAGS3 = $(CFLAGS2) /D "DESCRIPTION_SHELLEX_EXPORTS"
+CFLAGS4 = $(CFLAGS3) /D "WINVER=0x0400" /D "_WIN32_WINDOWS=0x0400"
+CFLAGS5 = $(CFLAGS4) /D "_WIN32_IE=0x0400" /D "UNICODE" /D "_UNICODE"
+CFLAGS = $(CFLAGS5) /D "STRICT" /D "_CRT_SECURE_NO_WARNING"
+
+# Debug flags
+DEBUG_FLAGS = /D "_DEBUG" /Zi /Od
+# Release flags
+RELEASE_FLAGS = /D "NDEBUG" /O2
+
+# Linker flags for DLL
+LDFLAGS1 = /nologo /DLL /SUBSYSTEM:WINDOWS,4.0
+LDFLAGS2 = $(LDFLAGS1) /IMPLIB:$(IMPLIB) /NODEFAULTLIB
+LDFLAGS3 = $(LDFLAGS2) /INCREMENTAL:NO /MACHINE:IX86
+LDFLAGS4 = $(LDFLAGS3) /OPT:NOWIN98 /MERGE:.rdata=.text
+LDFLAGS = $(LDFLAGS4) /ENTRY:_DllMainCRTStartup@12
+
+# Libraries (Win95 compatible)
+LIBS1 = kernel32.lib user32.lib gdi32.lib comctl32.lib
+LIBS2 = $(LIBS1) ole32.lib oleaut32.lib uuid.lib shell32.lib
+LIBS = $(LIBS2) advapi32.lib comdlg32.lib
+
+# Module definition file
+DEF_FILE = descript.ion-shellex.def
+
+# Default target
+all: $(TARGET)
+
+# Build DLL
+$(TARGET): $(OBJS) $(DEF_FILE)
+    $(LINK) $(LDFLAGS) $(OBJS) $(LIBS) /DEF:$(DEF_FILE) /OUT:$@
+    @echo DLL built: $@
+    @dumpbin /headers $@ | findstr "subsystem"
+
+# Pattern rule for .cpp -> .obj
+.cpp.obj:
+    $(CC) $(CFLAGS) $<
+
+# Explicit rules for each source file
+dll_main.obj: dll_main.cpp
+    $(CC) $(CFLAGS) dll_main.cpp
+
+context_menu.obj: context_menu.cpp
+    $(CC) $(CFLAGS) context_menu.cpp
+
+dbg.obj: dbg.cpp
+    $(CC) $(CFLAGS) dbg.cpp
+
+property_sheet.obj: property_sheet.cpp
+    $(CC) $(CFLAGS) property_sheet.cpp
+
+shellext_init.obj: shellext_init.cpp
+    $(CC) $(CFLAGS) shellext_init.cpp
+
+description_handler.obj: description_handler.cpp
+    $(CC) $(CFLAGS) description_handler.cpp
+
+description_file_rw.obj: description_file_rw.cpp
+    $(CC) $(CFLAGS) description_file_rw.cpp
+
+file_io_wrapper.obj: file_io_wrapper.cpp
+    $(CC) $(CFLAGS) file_io_wrapper.cpp
+
+errors_and_settings.obj: errors_and_settings.cpp
+    $(CC) $(CFLAGS) errors_and_settings.cpp
+
+bom_cp_eol_utils.obj: bom_cp_eol_utils.cpp
+    $(CC) $(CFLAGS) bom_cp_eol_utils.cpp
+
+column_provider.obj: column_provider.cpp
+    $(CC) $(CFLAGS) column_provider.cpp
+
+# Resource compilation
+resource.res: resource.rc
+    $(RC) /fo resource.res resource.rc
+
+# Clean target
+clean:
+    -del /Q *.obj *.res *.lib *.exp *.pdb *.ilk $(TARGET) 2>nul
+
+# Debug build
+debug: CFLAGS = $(CFLAGS) $(DEBUG_FLAGS)
+debug: LDFLAGS = $(LDFLAGS) /DEBUG
+debug: all
+
+# Release build
+release: CFLAGS = $(CFLAGS) $(RELEASE_FLAGS)
+release: all
+
+# Show dependencies
+deps:
+    dumpbin /dependents $(TARGET)
+
+# Register DLL
+register:
+    regsvr32 $(TARGET)
+
+# Unregister DLL
+unregister:
+    regsvr32 /u $(TARGET)

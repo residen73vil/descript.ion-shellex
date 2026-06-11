@@ -6,6 +6,7 @@
 #include <iostream>
 #include "context_menu.h"
 #include "property_sheet.h"
+#include "column_provider.h"
 #include "dbg.h"
 HINSTANCE g_dll_hInstance;
 UINT g_cActiveComponents = 0; //counts additional noncom components of the dll that are in use
@@ -55,6 +56,10 @@ public:
 		}
 		if ( riid == IID_IShellPropSheetExt){
 			ShellPropSheetExtComClass *pClass = new ShellPropSheetExtComClass();
+			return pClass->QueryInterface(riid, ppv);
+		}
+		if ( riid == IID_IColumnProvider){
+			ColumnProviderComClass *pClass = new ColumnProviderComClass();
 			return pClass->QueryInterface(riid, ppv);
 		}
 		return E_NOINTERFACE;
