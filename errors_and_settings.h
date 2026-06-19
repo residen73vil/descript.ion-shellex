@@ -12,9 +12,9 @@ enum MultiLineStyle{
 };
 
 struct CSettings{
-	MultiLineStyle MultiLineStyle = AUTO;
-	UINT cp = CP_UTF8;
-	bool bom = true;
+	MultiLineStyle MultiLineStyle;
+	UINT cp;
+	bool bom;
 };
 
 class CErrorsAndSettings
@@ -28,7 +28,7 @@ class CErrorsAndSettings
 	CRITICAL_SECTION cs;
 	CSettings settings;
 
-	DWORD m_last_io_error = 0;
+	DWORD m_last_io_error;
 	static void ShowError(const wchar_t* kind, const wchar_t* msg);
 	CErrorsAndSettings():	new_file_default_codepage(CP_UTF8),
 							new_file_default_BOM(BOM_UTF8_MODE)
@@ -36,22 +36,21 @@ class CErrorsAndSettings
 		InitializeCriticalSection(&cs);
 		//TODO: Should initialize settings from registry.
 	}
+	// Delete copy constructor and assignment operator
+	CErrorsAndSettings(const CErrorsAndSettings&);
+	CErrorsAndSettings& operator=(const CErrorsAndSettings&);
+public:
 	~CErrorsAndSettings(){
 		DeleteCriticalSection(&cs);
 	}
-public:
-	// Delete copy constructor and assignment operator
-	CErrorsAndSettings(const CErrorsAndSettings&) = delete;
-	CErrorsAndSettings& operator=(const CErrorsAndSettings&) = delete;
-
 	// Static method to get the instance of the Singleton
 	static CErrorsAndSettings& getInstance();
 	// Settings
 	void setSettings(const CSettings &settings);
 	CSettings getSettings();
 
-	UINT new_file_default_codepage = CP_UTF8;
-	UINT new_file_default_BOM = BOM_UTF8_MODE;
+	UINT new_file_default_codepage;
+	UINT new_file_default_BOM;
 	static bool IOError(DWORD error);
 	
 	bool ConvertionError(DWORD error);

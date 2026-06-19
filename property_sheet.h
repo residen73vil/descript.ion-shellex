@@ -1,7 +1,8 @@
 #ifndef PROPERTY_SHEET_H
 #define PROPERTY_SHEET_H
 #include <objbase.h>
-#include <shobjidl.h>
+
+//#include <shobjidl.h>
 #include <shlobj.h>
 #include <shlguid.h>
 #include <windows.h>
@@ -9,6 +10,7 @@
 #include "resource.h"
 #include "dbg.h" 
 #include "shellext_init.h"
+#include "context_menu.h"
 #include "description_handler.h"
 
 //#define WINVER 0x0600 // For Windows Vista and later
@@ -29,14 +31,14 @@ const GUID CLSID_ShellPropSheetExtComClass = { 0x5629FF98, 0xE953, 0x466D, { 0x8
 
 // Forward declaration of the interface
 class  IShellPropSheetExtComClass :
-	public ShellExtInitComClass,
-	public  IShellPropSheetExt
+	public IShellPropSheetExt,
+	public ContextMenuComClass
  {
 public:
 		// IContextMenu methods
-	virtual HRESULT __stdcall AddPages(LPFNADDPROPSHEETPAGE, LPARAM) override = 0;;
-	virtual HRESULT __stdcall ReplacePage(UINT, LPFNADDPROPSHEETPAGE, LPARAM) override
-	  { return E_NOTIMPL; }
+	virtual HRESULT __stdcall AddPages(LPFNADDPROPSHEETPAGE, LPARAM) = 0;
+	virtual HRESULT __stdcall ReplacePage(UINT, LPFNADDPROPSHEETPAGE, LPARAM)
+		{ return E_NOTIMPL; }
 };
 
 
@@ -46,25 +48,25 @@ protected:
 	TCHAR m_szFile[MAX_PATH];
 public:
 	ShellPropSheetExtComClass() : refCount(0) {
-		DEBUG_LOG(L"ShellPropSheetExtComClass", "object created") 
+		DEBUG_LOG(L"ShellPropSheetExtComClass", L"object created") 
 	}
 
-	HRESULT __stdcall QueryInterface(REFIID riid, void **ppv) override;
+	HRESULT __stdcall QueryInterface(REFIID riid, void **ppv);
 
-	ULONG __stdcall AddRef() override ;
+	ULONG __stdcall AddRef();
 
-	ULONG __stdcall Release() override ;
+	ULONG __stdcall Release();
 
 		// IContextMenu methods
 	//Adds items to the menu
-	HRESULT __stdcall AddPages ( LPFNADDPROPSHEETPAGE lpfnAddPageProc, LPARAM lParam ) override ;
+	HRESULT __stdcall AddPages ( LPFNADDPROPSHEETPAGE lpfnAddPageProc, LPARAM lParam );
 private:
 	LONG refCount;
 };
 
 
 //Funictions for handling winapi callbacks
-INT_PTR CALLBACK PropPageDlgProc ( HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam );
+int CALLBACK PropPageDlgProc ( HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam );
 UINT CALLBACK PropPageCallbackProc ( HWND hwnd, UINT uMsg, LPPROPSHEETPAGE ppsp );
 BOOL OnInitDialog ( HWND hwnd, LPARAM lParam );
 //BOOL OnApply ( HWND hwnd, PSHNOTIFY* phdr );

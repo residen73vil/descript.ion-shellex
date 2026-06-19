@@ -1,0 +1,59 @@
+# NMake Makefile for building a DLL with MSVC 6.0
+
+# Project name
+TARGET = descript.ion-shellex
+TARGET_DLL = $(TARGET).dll
+TARGET_PDB = $(TARGET).pdb
+
+# Compiler and linker
+CC = cl
+LINK = link
+RC = rc
+
+# Compiler flags
+CFLAGS = /nologo /W3 /GX /Od /MDd /Zi /D "WIN32" /D "_UNICODE" /D "UNICODE" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "_WINDLL" /FD /c /D "_DEBUG"
+
+# Resource compiler flags
+RCFLAGS = /l 0x409 /d "NDEBUG"
+
+# Linker flags
+LDFLAGS = /nologo /dll /incremental:no /export:DllGetClassObject=_DllGetClassObject@12 /machine:I386 /out:$(TARGET_DLL) /DEBUG /PDB:$(TARGET_PDB)
+
+# Libraries
+LIBS = kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib comctl32.lib
+
+# Object files
+OBJS = \
+	bom_cp_eol_utils.obj \
+	dbg.obj \
+	description_handler.obj \
+	errors_and_settings.obj \
+	property_sheet.obj \
+	shellext_init.obj \
+	context_menu.obj \
+	description_file_rw.obj \
+	dll_main.obj \
+	file_io_wrapper.obj
+
+# Resource object file
+RES_OBJ = resource.res
+
+# Default target
+all: $(TARGET_DLL)
+
+# Link DLL
+$(TARGET_DLL): $(OBJS) $(RES_OBJ)
+	$(LINK) $(LDFLAGS) $(OBJS) $(RES_OBJ) $(LIBS)
+
+# Suffix rule for .cpp -> .obj
+.SUFFIXES: .cpp .obj
+.cpp.obj:
+	$(CC) $(CFLAGS) $<
+
+# Compile resources
+.rc.res:
+	$(RC) $(RCFLAGS) /fo $@ $<
+
+# Clean up
+clean:
+	-del /q $(OBJS) $(RES_OBJ) $(TARGET_DLL) *.ilk *.pdb 2>nul

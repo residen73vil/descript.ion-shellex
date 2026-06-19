@@ -1,8 +1,8 @@
 #include "dbg.h"
 //objects for debug build
-#ifdef _DEBUG
+#ifdef __DEBUG
 #include <windows.h>
-#include <regex>
+//#include <regex>
 CRITICAL_SECTION dbg_critical_section;
 std::wofstream dbgout;
 
@@ -49,26 +49,26 @@ void dbg_open_log_file(const char* log_file) {
     // Check if the original file exists
     if (!fileExists(originalPath)) {
         // Open the file for writing
-		dbgout.open(originalPath);
+		dbgout.open(originalPath.c_str(),std::ios::out | std::ios::binary);
         return;
     }
 
-    std::string baseName = getBaseName(originalPath); // Get the file name without extension
+   /* std::string baseName = getBaseName(originalPath); // Get the file name without extension
     std::string extension = getExtension(originalPath); // Get the file extension
 
     // Regex to find a number at the end of the base name
-    std::regex numberRegex("(\\d+)$");
-    std::smatch match;
+    //std::regex numberRegex("(\\d+)$");
+    //std::smatch match;
 
     int newNumber = 1; // Start numbering from 1
     std::string newBaseName = baseName;
 
     // Check if the base name ends with a number
-    if (std::regex_search(baseName, match, numberRegex)) {
+    //if (std::regex_search(baseName, match, numberRegex)) {
         // Extract the number and increment it
-        newNumber = std::stoi(match.str(1)) + 1;
-        newBaseName = baseName.substr(0, baseName.size() - match.str(1).size()); // Remove the number
-    }
+    //    newNumber = std::stoi(match.str(1)) + 1;
+    //    newBaseName = baseName.substr(0, baseName.size() - match.str(1).size()); // Remove the number
+    //}
 
     std::string newPath;
     
@@ -78,9 +78,9 @@ void dbg_open_log_file(const char* log_file) {
         newPath = getDirectory(originalPath) + newBaseName + std::to_string(newNumber) + extension;
         newNumber++; // Increment for the next check
     } while (fileExists(newPath)); // Check if the new file name already exists
-
+*/
     // Create the new file
-	dbgout.open(newPath);
+	//dbgout.open(newPath);
 }
 
 

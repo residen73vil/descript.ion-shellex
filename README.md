@@ -20,6 +20,13 @@ In order to replace you dll in the system you will have to kill explorer in the 
 and start it again or just restart it, you can also use other means like holding down 
 **Ctrl+Alt+Shift** and click **Cancel** in the Shutdown menu. 
 
+#### Build (only debug one for now) on MSVC600 can be done using:
+	nmake -f Makefile.msvc clean
+	nmake -f Makefile.msvc
+
+Logs are now printed into debug console (in a bit broken form), you can debug using windbg
+pdb file should be placed in %windir%\symbols\dll\
+also some extra dll are required for debug build
 
 ### Release build
 	make clean
@@ -28,33 +35,30 @@ and start it again or just restart it, you can also use other means like holding
 ### Testing
 Some tests may be found in  :file_folder:*tests* folder.
 
-# Draft version 2 is ready!
+# Draft version 3 is ready!
 
-Basic functionality is finally working, experemntal settings and error messages singleton working.
+Everything more or less works.
 
 ## Goals for now are:
 
-1. Port to 32 bits.
-2. Add more tests, and make them more automatic.
-3. Try and compile in MS Visual c++ 6.
-4. Refactor code.
-5. Make it run on win 98, win 95 if possible.
+1. Add more tests, and make them more automatic.
+2. Try and compile in MS Visual c++ for 64 bit.
+3. Back port to mingw.
+3. Refactor code.
+4. Make it run on win 98, win 95 if possible.
 
 ## Milestones are:
 
-1. Add settings, and error messages.
-2. Polish user interface.(multi line is enabled, but not handled properly yet)
-3. Add column with comments in the explorer.
-4. Add multi line comments support, in TotalCommander and DoubleCommander style.
-5. Multi language support
-6. Release with installer and stuff. 
+1. Add column with comments in the explorer.
+2. Settings and registration in registry.
+2. Add error messages.
+3. Multi language support
+4. Release with installer and stuff. 
 
 
 ## Known issues:
 
 - New file creation is not really robust.
 - There is a chance for bugs in new line detection in some codepages.
-- Parts of the app are not thread safe although it is not critical.
-- Its critical opening several property dialogs causes a crush!
 - Right click menu seem to disappear withing several seconds when my extension is on and you select several files.
 (It is caused by updating selected file, but still keep an eye for it)

@@ -1,5 +1,47 @@
 #include "property_sheet.h"
 
+#define GetWindowLongPtr GetWindowLong
+#define SetWindowLongPtr SetWindowLong
+typedef long LONG_PTR;
+#define GWLP_USERDATA GWL_USERDATA
+#define GWLP_ID GWL_ID
+
+
+//-------------------------------------------------------------------------------
+// compatablity functions for older windows versions 
+//WARNING: These functions are probably a bit broken.
+//-------------------------------------------------------------------------------
+
+// swprintf_s (secure CRT) -> swprintf
+inline int swprintf_s(wchar_t* buffer, size_t size, const wchar_t* format, ...) {
+	va_list args;
+	va_start(args, format);
+	int result = _vsnwprintf(buffer, size, format, args);
+	va_end(args);
+	return result;
+}
+
+// ============ LOCALE FUNCTIONS ============
+// GetLocaleInfoEx (Vista+) -> GetLocaleInfo (Win95)
+inline int GetLocaleInfoExCompat(LPCWSTR lpLocaleName, LCTYPE LCType, 
+								 LPWSTR lpLCData, int cchData) {
+	// Convert locale name to LCID (simplified)
+	LCID lcid = LOCALE_SYSTEM_DEFAULT;
+	
+	if (lpLocaleName) {
+		if (wcscmp(lpLocaleName, L"") == 0 || 
+			wcscmp(lpLocaleName, L"en-US") == 0) {
+			lcid = MAKELCID(MAKELANGID(LANG_ENGLISH, SUBLANG_ENGLISH_US), 
+						   SORT_DEFAULT);
+		}
+		// Add more locales as needed
+	}
+	
+	return GetLocaleInfoW(lcid, LCType, lpLCData, cchData);
+};
+
+//-------------------------------------------------------------------------------------
+
 // Structure of state of current property sheet
 struct PropSheetAttachments{
 	CDescriptionHandler description;
@@ -31,30 +73,35 @@ HRESULT __stdcall ShellPropSheetExtComClass::QueryInterface(REFIID riid, void **
 		AddRef();
 		return NOERROR;
 	}
+	if ( riid == IID_IContextMenu) {
+		*ppv = static_cast<IContextMenu*>(this);
+		AddRef();
+		return NOERROR;
+	}
 	if ( riid == IID_IShellPropSheetExt) {
 		*ppv = static_cast<IShellPropSheetExt*>(this);
-		 	AddRef();
-			return NOERROR;
-		}
+		AddRef();
+		return NOERROR;
+	}
 	if ( riid == IID_IShellExtInit) {
 		*ppv = static_cast<IShellExtInit*>(this);
-			AddRef();
-			return NOERROR;
-		}
-		*ppv = nullptr;
-		return E_NOINTERFACE;
+		AddRef();
+		return NOERROR;
+	}
+	*ppv = NULL;
+	return E_NOINTERFACE;
 }
 
 ULONG __stdcall ShellPropSheetExtComClass::AddRef() {
-	DEBUG_LOG(L"ShellPropSheetExtComClass", "refcount incremented") 
+	DEBUG_LOG(L"ShellPropSheetExtComClass", L"refcount incremented") 
 	return InterlockedIncrement(&refCount);
 }
 
 ULONG __stdcall ShellPropSheetExtComClass::Release() {
-	DEBUG_LOG(L"ShellPropSheetExtComClass", "refcount decremented") 
+	DEBUG_LOG(L"ShellPropSheetExtComClass", L"refcount decremented") 
 	ULONG count = InterlockedDecrement(&refCount);
 	if (count == 0) {
-		DEBUG_LOG(L"ShellPropSheetExtComClass", "object deleted") 
+		DEBUG_LOG(L"ShellPropSheetExtComClass", L"object deleted") 
 		delete this;
 	}
 	return count;
@@ -63,7 +110,7 @@ ULONG __stdcall ShellPropSheetExtComClass::Release() {
 // IShellPropSheetExt methods
 //Adds page to the property sheets window
 HRESULT __stdcall ShellPropSheetExtComClass::AddPages ( LPFNADDPROPSHEETPAGE lpfnAddPageProc, LPARAM lParam ) {
-	
+	DEBUG_LOG(L"\tPropSheet add pages",L"");
 	bool only_one_file_selected = (m_lsFiles.size() == 1) ? true : false;
 	if ( m_lsFiles.size() < 1)
 		return S_FALSE;
@@ -71,7 +118,7 @@ HRESULT __stdcall ShellPropSheetExtComClass::AddPages ( LPFNADDPROPSHEETPAGE lpf
 	pAttachments->description.LoadPath(m_szPath);
 	
 	pAttachments->file_names = string_list(m_lsFiles);
-	DEBUG_LOG("\t\t\tPropSheet add pages - file names array:",&(pAttachments->file_names));
+	DEBUG_LOG(L"\t\t\tPropSheet add pages - file names array:",&(pAttachments->file_names));
 	PROPSHEETPAGE  psp;
 	HPROPSHEETPAGE hPage;
 	
@@ -105,9 +152,9 @@ HRESULT __stdcall ShellPropSheetExtComClass::AddPages ( LPFNADDPROPSHEETPAGE lpf
 
 //Callbacks for the page in the property sheets window
 
-INT_PTR CALLBACK PropPageDlgProc ( HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam ){
+int CALLBACK PropPageDlgProc ( HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam ){
 	BOOL bRet = FALSE;
-	DEBUG_LOG("PropPageDlgProc MSG", uMsg)
+	DEBUG_LOG(L"PropPageDlgProc MSG", uMsg)
 	switch ( uMsg )
 		{
 		case WM_INITDIALOG:
@@ -117,13 +164,13 @@ INT_PTR CALLBACK PropPageDlgProc ( HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM l
 		case WM_NOTIFY:
 			{
 			NMHDR* phdr = (NMHDR*) lParam;
-			DEBUG_LOG("		PropPageDlgProc WM_NOTIFY code", phdr->code)
-			DEBUG_LOG("		PropPageDlgProc WM_NOTIFY wParam", HIWORD(wParam))
+			DEBUG_LOG(L"		PropPageDlgProc WM_NOTIFY code", phdr->code)
+			DEBUG_LOG(L"		PropPageDlgProc WM_NOTIFY wParam", HIWORD(wParam))
 
 			switch ( phdr->code )
 				{
 				case PSN_APPLY:{
-					DEBUG_LOG("	WM_NOTIFY", "Apply")
+					DEBUG_LOG(L"	WM_NOTIFY", L"Apply")
 					PropSheetAttachments *pAttachments = (PropSheetAttachments*)GetWindowLongPtr(hwnd, GWLP_USERDATA);
 					if (pAttachments->are_settings_to_apply_present){
 						CErrorsAndSettings::getInstance().setSettings(pAttachments->settings);
@@ -149,23 +196,23 @@ INT_PTR CALLBACK PropPageDlgProc ( HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM l
 }
 
 UINT CALLBACK PropPageCallbackProc ( HWND hwnd, UINT uMsg, LPPROPSHEETPAGE ppsp ){
-		DEBUG_LOG("PropPageCallbackProc:", uMsg);
+		DEBUG_LOG(L"PropPageCallbackProc:", uMsg);
 		if ( PSPCB_RELEASE == uMsg ){
-			DEBUG_LOG("PropPageDlgProc freeing pAttachments", ppsp->lParam);
+			DEBUG_LOG(L"PropPageDlgProc freeing pAttachments", ppsp->lParam);
 			delete ( reinterpret_cast<PropSheetAttachments*>(ppsp->lParam) );
 		}
 
 	return 1; // used for PSPCB_CREATE - let the page be created
 }
 
-INT_PTR CALLBACK TabControlDlgProc ( HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam ){
+INT CALLBACK TabControlDlgProc ( HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam ){
 	BOOL bRet = FALSE;
-	DEBUG_LOG("\tTabControl MSG", uMsg)
+	DEBUG_LOG(L"\tTabControl MSG", uMsg)
 	switch ( uMsg )
 		{
 		case WM_COMMAND:
-			DEBUG_LOG("tubControl	WM_COMMAND", HIWORD(wParam))
-			DEBUG_LOG("tubControl	WM_COMMAND LOW", LOWORD(wParam))
+			DEBUG_LOG(L"tubControl	WM_COMMAND", HIWORD(wParam))
+			DEBUG_LOG(L"tubControl	WM_COMMAND LOW", LOWORD(wParam))
 			if (HIWORD(wParam) == BN_CLICKED){
 				HWND hPropertySheet = GetParent(hwnd);
 				PropSheetAttachments* pAttachments = (PropSheetAttachments*) GetWindowLongPtr(hPropertySheet, GWLP_USERDATA);
@@ -213,7 +260,7 @@ INT_PTR CALLBACK TabControlDlgProc ( HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM
 				HWND hPropertySheet = GetParent(hwnd);
 				HWND hTabControl = GetDlgItem(hPropertySheet, IDC_TABCTRL);
 
-				DEBUG_LOG("Changes in the edit tab handler", hTabControl);
+				DEBUG_LOG(L"Changes in the edit tab handler", hTabControl);
 				int iSel = TabCtrl_GetCurSel(hTabControl);
 
 				PropSheetAttachments* pAttachments = (PropSheetAttachments*) GetWindowLongPtr(hPropertySheet, GWLP_USERDATA);
@@ -246,7 +293,7 @@ INT_PTR CALLBACK TabControlDlgProc ( HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM
 
 				//add changes
 				pAttachments->description.AddChangeComment(itFileName->c_str(),comment.c_str());
-				DEBUG_LOG("Changes in the edit happened", buffer);
+				DEBUG_LOG(L"Changes in the edit happened", buffer);
 				delete[] buffer;
 
 				//enable apply button
@@ -266,7 +313,7 @@ BOOL OnInitDialog ( HWND hwnd, LPARAM lParam ){
 	HWND hTabControl = GetDlgItem(hwnd, IDC_TABCTRL);
 	PropSheetAttachments* pAttachments = (PropSheetAttachments*) ((LPPROPSHEETPAGE) lParam)->lParam;
 	string_list* file_names = &(pAttachments->file_names);
-	DEBUG_LOG("\t\t\tCreation of tab pages - file names array:",file_names);
+	DEBUG_LOG(L"\t\t\tCreation of tab pages - file names array:",file_names);
 
 	TCITEM tie = {0};
 	tie.mask = TCIF_TEXT;
@@ -275,7 +322,7 @@ BOOL OnInitDialog ( HWND hwnd, LPARAM lParam ){
 	HWND hSettingsTab = CreateDialog(g_dll_hInstance, MAKEINTRESOURCE(IDD_SETTINGS), hwnd, TabControlDlgProc);
 	SetWindowLongPtr(hSettingsTab, GWLP_ID, static_cast<LONG_PTR>(IDD_SETTINGS_TAB));
 
-	DEBUG_LOG("\t\t\tCreation of tab pages","");
+	DEBUG_LOG(L"\t\t\tCreation of tab pages","");
 	// -------------------------------------------------
 	// Creating pages in tab
 	// -------------------------------------------------
@@ -286,9 +333,9 @@ BOOL OnInitDialog ( HWND hwnd, LPARAM lParam ){
 		DEBUG_LOG(L"Init dialog file:", *it);
 		TCHAR fname[MAX_TAB_LENGTH] = {0};
 		UINT str_length = it->size() >= MAX_TAB_LENGTH ? MAX_TAB_LENGTH-1 : it->size();
-		std::wmemcpy(fname, it->data(), str_length);
+		wmemcpy(fname, it->data(), str_length);
 		if (it->size() >= MAX_TAB_LENGTH)
-			{ std::wmemcpy(&fname[MAX_TAB_LENGTH-4], _T("..."), 3); }
+			{ wmemcpy(&fname[MAX_TAB_LENGTH-4], _T("..."), 3); }
 		tie.pszText = only_one_file_selected ? (LPWSTR) _T("Comment") : (LPWSTR) fname;
 		TabCtrl_InsertItem(hTabControl, nTab, &tie);
 		nTab++;
@@ -336,12 +383,12 @@ BOOL OnInitDialog ( HWND hwnd, LPARAM lParam ){
 	MapWindowPoints(hTabControl, hwnd, (POINT*)&rcTab, 2); // to parent‑dialog coords
 	TabCtrl_AdjustRect(hTabControl, FALSE, &rcTab);
 	// Size each page to fill that rect
-	SetWindowPos(hCommentTab, nullptr,
+	SetWindowPos(hCommentTab, NULL,
 				 rcTab.left, rcTab.top,
 				 rcTab.right - rcTab.left,
 				 rcTab.bottom - rcTab.top,
 				 SWP_SHOWWINDOW);
-	SetWindowPos(hSettingsTab, nullptr,
+	SetWindowPos(hSettingsTab, NULL,
 				 rcTab.left, rcTab.top,
 				 rcTab.right - rcTab.left,
 				 rcTab.bottom - rcTab.top,
@@ -382,7 +429,7 @@ void ShowTabPage(int iSel, HWND hwnd){
 		string_list* file_names = &pAttachments->file_names;
 		string_list::iterator it = file_names->begin();
 		std::advance(it, iSel);
-		DEBUG_LOG("change tab to",*it);
+		DEBUG_LOG(L"change tab to",*it);
 		std::basic_string<TCHAR> comment;
 		std::basic_string<TCHAR> commentWithNewLines;
 		if ( pAttachments->description.ReadCommentWithChanges( it->c_str(), comment ) ){
@@ -411,24 +458,27 @@ BOOL CALLBACK CPEnumProc(LPTSTR lpCodePageString)
 
 #if defined(UNICODE)
 	// Try to get the native description (e.g. "Western European (Windows)")
-	int ret = GetLocaleInfoEx(L"en-US", LOCALE_IDEFAULTANSICODEPAGE, nullptr, 0);
+	int ret = GetLocaleInfoExCompat(L"en-US", LOCALE_IDEFAULTANSICODEPAGE, NULL, 0);
 	// The LOCALE_IDEFAULTANSICODEPAGE flag does **not** give the name,
 	// so we use GetCPInfoEx which returns the code‑page description.
 	CPINFOEXW info;
 	if (GetCPInfoExW(cp, 0, &info))
-		swprintf_s(cpName, L"%s", info.CodePageName);
+		_snwprintf(cpName, 64, L"%s", info.CodePageName);
 	else
-		swprintf_s(cpName, L"%u", cp);
+		_snwprintf(cpName, 64, L"%u", cp);
 #else
 	// ANSI version (same logic, just the W‑suffix functions are absent)
 	CPINFOEXA info;
 	if (GetCPInfoExA(cp, 0, &info))
-		swprintf_s(cpName, L"%S", info.CodePageName);
+		_snwprintf(cpName, 64, L"%S", info.CodePageName);
 	else
-		swprintf_s(cpName, L"%u", cp);
+		_snwprintf(cpName, 64, L"%u", cp);
 #endif
 
-	g_codePages.push_back({ cp, cpName });
+	CodePageItem item;
+	item.cp = cp;
+	item.name = cpName;
+	g_codePages.push_back(item);
 	return TRUE;	// continue enumeration
 }
 

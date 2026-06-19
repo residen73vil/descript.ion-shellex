@@ -34,13 +34,13 @@ size_t CDescriptionFileRW::FindLines() {
 	for ( ; end < limit; ) {
 		size_t eol_len = is_eol( end, limit );
 		if ( eol_len > 0){
-			m_vLines.emplace_back(start, end );
+			m_vLines.push_back(std::make_pair(start, end));
 			end = end + eol_len;
 			start = end;
 		} else { end++;	}
 	}
 	if (start < end && start < limit) { //add last line
-		m_vLines.emplace_back(start, end);
+		m_vLines.push_back(std::make_pair(start, end));
 	}
 
 	return m_vLines.size();
@@ -111,7 +111,7 @@ int CDescriptionFileRW::GetConvertedLine(int number, /*out*/ std::wstring* line)
 		char* multiByteStr = linebonds.first;
 		int wideCharSize = MultiByteToWideChar(m_nCodepage, 0, multiByteStr, multi_byte_str_size, NULL, 0);
 		if (wideCharSize <= 0) {
-			DEBUG_LOG( "Error getting wide char size", GetLastError() );
+			DEBUG_LOG( L"Error getting wide char size", GetLastError() );
 			return 0;
 		}
 	
@@ -122,7 +122,7 @@ int CDescriptionFileRW::GetConvertedLine(int number, /*out*/ std::wstring* line)
 		int result = MultiByteToWideChar(m_nCodepage, 0, multiByteStr, multi_byte_str_size,
 											 wideStr, wideCharSize);
 		if (result <= 0) {
-			DEBUG_LOG( "Error converting to wide char", GetLastError() );
+			DEBUG_LOG( L"Error converting to wide char", GetLastError() );
 			delete[] wideStr; // Clean up allocated memory
 			return 0;
 		}
@@ -140,7 +140,7 @@ bool CDescriptionFileRW::ChangeLine(int number, std::wstring* line){
 
 bool CDescriptionFileRW::ConvertChangesToCodePage(UINT codepage, std::map<int, tuple_2_sizes_and_ptr>& changes_cvonverted){
 	for (std::map<int, std::wstring>::iterator it = m_mChanges.begin(); it != m_mChanges.end(); ++it) {
-		DEBUG_LOG("change line", it->second + L" (in line) " + std::to_wstring(it->first));
+		//DEBUG_LOG("change line", it->second + L" (in line) " + std::to_wstring(it->first));
 		int line_n = it->first;
 		std::wstring* source_str = &(it->second);
 		int size = 0;
@@ -164,14 +164,14 @@ bool CDescriptionFileRW::ConvertChangesToCodePage(UINT codepage, std::map<int, t
 		} else {
 			size = WideCharToMultiByte(codepage, 0, source_str->c_str(), source_str->size(), NULL, 0, NULL, NULL);
 			if (size <= 0) {
-				DEBUG_LOG( "Error getting str size", GetLastError() );
+				DEBUG_LOG( L"Error getting str size", GetLastError() );
 				return false;
 			}
 			str_to_write = new char[size + 1];
 			int result = WideCharToMultiByte(codepage, 0, source_str->c_str(), source_str->size(), 
 														str_to_write, size, NULL, NULL);
 			if (result <= 0) {
-				DEBUG_LOG( "Error converting from wide char", GetLastError() );
+				DEBUG_LOG( L"Error converting from wide char", GetLastError() );
 				delete[] str_to_write; // Clean up allocated memory
 				return false;
 			}
@@ -205,11 +205,11 @@ bool CDescriptionFileRW::ConvertAndSaveChanges(UINT codepage, bool bom){
 	int new_lines_sizes = 0;
 	for (std::map<int, tuple_2_sizes_and_ptr>::iterator it = changes_cvonverted.begin();
 				 it != changes_cvonverted.end(); ++it) {
-		lines_sizes_in_file += std::get<0>(it->second);
-		new_lines_sizes += std::get<1>(it->second);
+		lines_sizes_in_file += get0(it->second);
+		new_lines_sizes += get1(it->second);
 		if ( it->first < 0 ){ //if lines are added to the file add EndOfLine size as well
 			//or bom size if first line in a new file
-			INT bom_mode_for_line = ( ( new_lines_sizes == std::get<1>(it->second) && is_new_file) ? 
+			INT bom_mode_for_line = ( ( new_lines_sizes == get1(it->second) && is_new_file) ? 
 																m_nTargetBitOrder : BOM_SKIP_MODE ); 
 			new_lines_sizes += eol_size( m_nTargetEndOfLine, codepage, bom_mode_for_line );
 		}
@@ -220,15 +220,15 @@ bool CDescriptionFileRW::ConvertAndSaveChanges(UINT codepage, bool bom){
 	char*  copy_from = m_file_io.m_lpcFileBuffer;
 	char*  copy_to = buffer_to_write;
 	//copping data before changed line and its contents into buffer_to_write
-	for (std::map<int, tuple_2_sizes_and_ptr>::iterator it = changes_cvonverted.begin();
-				 it != changes_cvonverted.end(); ++it) {
-		if (it->first >= 0){ 
-			int copy_count = m_vLines[it->first].first - copy_from;
+	for (std::map<int, tuple_2_sizes_and_ptr>::iterator it2 = changes_cvonverted.begin();
+				 it2 != changes_cvonverted.end(); ++it2) {
+		if (it2->first >= 0){ 
+			int copy_count = m_vLines[it2->first].first - copy_from;
 			memcpy(copy_to, copy_from, copy_count);
 			copy_to += copy_count;
-			memcpy(copy_to, std::get<2>(it->second), std::get<1>(it->second));
-			copy_to += std::get<1>(it->second);
-			copy_from = m_vLines[it->first].second;
+			memcpy(copy_to, get2(it2->second), get1(it2->second));
+			copy_to += get1(it2->second);
+			copy_from = m_vLines[it2->first].second;
 		}
 	}
 	//copping data after the last changed line
@@ -237,23 +237,23 @@ bool CDescriptionFileRW::ConvertAndSaveChanges(UINT codepage, bool bom){
 
 	//adding new lines
 	copy_to += copy_count;
-	for (std::map<int, tuple_2_sizes_and_ptr>::iterator it = changes_cvonverted.begin();
-				 it != changes_cvonverted.end(); ++it) {
-		if (it->first < 0){
+	for (std::map<int, tuple_2_sizes_and_ptr>::iterator it3 = changes_cvonverted.begin();
+				 it3 != changes_cvonverted.end(); ++it3) {
+		if (it3->first < 0){
 			// if first line in the file add bom instead of eol
 			INT bom_mode_for_line = ( (copy_to == buffer_to_write) ? m_nTargetBitOrder : BOM_SKIP_MODE ); 
 			copy_to += add_eol_or_bom( copy_to, m_nTargetEndOfLine, codepage, bom_mode_for_line );
-			char* line_to_add = std::get<2>(it->second);
-			size_t line_to_add_length = std::get<1>(it->second);
+			char* line_to_add = get2(it3->second);
+			size_t line_to_add_length = get1(it3->second);
 			memcpy(copy_to, line_to_add, line_to_add_length);
 			copy_to += line_to_add_length;
 		}
 	}
 	
 	//freeing memory (deleting converted lines)
-	for (std::map<int, tuple_2_sizes_and_ptr>::iterator it = changes_cvonverted.begin();
-				 it != changes_cvonverted.end(); ++it) {
-		delete[] std::get<2>(it->second);
+	for (std::map<int, tuple_2_sizes_and_ptr>::iterator it4 = changes_cvonverted.begin();
+				 it4 != changes_cvonverted.end(); ++it4) {
+		delete[] get2(it4->second);
 	}
 	
 	//writing data
