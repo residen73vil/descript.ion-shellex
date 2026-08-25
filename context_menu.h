@@ -5,6 +5,7 @@
 #include <shlobj.h>
 #include <shlguid.h>
 #include "shellext_init.h"
+#include "compiler_compatability.h"
 
 // Define a GUID for the COM class
 //{ed730b9b-5779-4692-9e36-f7d9a4e86e06}
@@ -24,7 +25,7 @@ public:
 
 	virtual HRESULT __stdcall InvokeCommand(LPCMINVOKECOMMANDINFO pici) = 0;
 
-	virtual long __stdcall GetCommandString(UINT idCmd, UINT uType, UINT *pwResv, LPSTR pszName, UINT cchMax) = 0;
+	virtual long __stdcall GetCommandString(CINT idCmd, UINT uType, UINT *pwResv, LPSTR pszName, UINT cchMax) = 0;
 };
 
 
@@ -50,7 +51,7 @@ public:
 	//Invoked when the item is clicked
 	HRESULT __stdcall InvokeCommand(LPCMINVOKECOMMANDINFO pici);
 	//Shows a comment for the menu item in the status bar
-	long __stdcall GetCommandString(UINT idCmd, UINT uType, UINT *pwResv, LPSTR pszName, UINT cchMax);
+	long __stdcall GetCommandString(CINT idCmd, UINT uType, UINT *pwResv, LPSTR pszName, UINT cchMax);
 private:
 	LONG refCount;
 };

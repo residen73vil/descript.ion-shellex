@@ -78,7 +78,7 @@ HRESULT __stdcall ContextMenuComClass::InvokeCommand(LPCMINVOKECOMMANDINFO pici)
 }
 
 //Shows a comment for the menu item in the status bar
-long __stdcall ContextMenuComClass::GetCommandString(UINT idCmd, UINT uType, UINT *pwResv, LPSTR pszName, UINT cchMax) {
+long __stdcall ContextMenuComClass::GetCommandString(CINT idCmd, UINT uType, UINT *pwResv, LPSTR pszName, UINT cchMax) {
 	//todo: implement if menu item persists
 	return S_OK;
 }

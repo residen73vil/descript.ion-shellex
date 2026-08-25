@@ -1,8 +1,7 @@
 #ifndef PROPERTY_SHEET_H
 #define PROPERTY_SHEET_H
+#include "compiler_compatability.h"
 #include <objbase.h>
-
-//#include <shobjidl.h>
 #include <shlobj.h>
 #include <shlguid.h>
 #include <windows.h>
@@ -12,6 +11,7 @@
 #include "shellext_init.h"
 #include "context_menu.h"
 #include "description_handler.h"
+
 
 //#define WINVER 0x0600 // For Windows Vista and later
 //#define _WIN32_WINNT 0x0600
@@ -66,8 +66,8 @@ private:
 
 
 //Funictions for handling winapi callbacks
-int CALLBACK PropPageDlgProc ( HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam );
-UINT CALLBACK PropPageCallbackProc ( HWND hwnd, UINT uMsg, LPPROPSHEETPAGE ppsp );
+RINT CALLBACK PropPageDlgProc ( HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam );
+R2INT CALLBACK PropPageCallbackProc ( HWND hwnd, UINT uMsg, LPPROPSHEETPAGE ppsp );
 BOOL OnInitDialog ( HWND hwnd, LPARAM lParam );
 //BOOL OnApply ( HWND hwnd, PSHNOTIFY* phdr );
 

@@ -1,12 +1,12 @@
 #include <windows.h>
 #include <objbase.h>
-//#include <shobjidl.h>
 #include <shlobj.h>
 #include <shlguid.h>
 #include <iostream>
 #include "context_menu.h"
 #include "property_sheet.h"
 #include "dbg.h"
+#include "compiler_compatability.h"
 HINSTANCE g_dll_hInstance;
 UINT g_cActiveComponents = 0; //counts additional noncom components of the dll that are in use
 //TODO: Check for memory leakage!!!
@@ -157,7 +157,7 @@ extern "C" __declspec(dllexport) STDAPI DllCanUnloadNow() {
 HRESULT LookForAnotherImplementedClass(REFIID riid, LPVOID FAR*ppv) {
 	DEBUG_LOG_RIID( L"LookForAnotherImplementedClass", riid)
 	static ShellPropSheetExtComClass *shellextInit = NULL;
-	if ( riid == IID_IContextMenu ){
+	/*if ( riid == IID_IContextMenu ){
 		ContextMenuComClass *pClass = new ContextMenuComClass();
 		return pClass->QueryInterface(riid, ppv);
 	}
@@ -170,7 +170,7 @@ HRESULT LookForAnotherImplementedClass(REFIID riid, LPVOID FAR*ppv) {
 			pClass->AddRef();
 			shellextInit = (ShellPropSheetExtComClass*) pClass;
 		}
-		__asm { int 3 };
+		//__asm { int 3 };
 		return pClass->QueryInterface(riid, ppv);
 	}
 	if ( riid == IID_IShellPropSheetExt ){
@@ -182,9 +182,9 @@ HRESULT LookForAnotherImplementedClass(REFIID riid, LPVOID FAR*ppv) {
 			pClass->AddRef();
 			shellextInit = pClass;
 		}
-		__asm { int 3 };
+		//__asm { int 3 };
 		return pClass->QueryInterface(riid, ppv);
 	}
-	*ppv = NULL;
+	*ppv = NULL;*/
 	return E_NOINTERFACE;
 }

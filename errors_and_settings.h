@@ -15,6 +15,8 @@ struct CSettings{
 	MultiLineStyle MultiLineStyle;
 	UINT cp;
 	bool bom;
+
+	CSettings(): MultiLineStyle(AUTO), cp(CP_UTF8), bom(true) {};
 };
 
 class CErrorsAndSettings
@@ -31,7 +33,8 @@ class CErrorsAndSettings
 	DWORD m_last_io_error;
 	static void ShowError(const wchar_t* kind, const wchar_t* msg);
 	CErrorsAndSettings():	new_file_default_codepage(CP_UTF8),
-							new_file_default_BOM(BOM_UTF8_MODE)
+							new_file_default_BOM(BOM_UTF8_MODE),
+							m_last_io_error(0)
 	{
 		InitializeCriticalSection(&cs);
 		//TODO: Should initialize settings from registry.
@@ -54,8 +57,6 @@ public:
 	static bool IOError(DWORD error);
 	
 	bool ConvertionError(DWORD error);
-
-
 };
 
 #endif

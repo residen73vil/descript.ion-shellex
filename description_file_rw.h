@@ -146,7 +146,10 @@ public:
 	*/
 	int GetConvertedLine(int number, /*out*/ std::wstring* line);
 
-
+	CDescriptionFileRW(): m_nFileSize(0), m_nFileSizeWithoutBOM(0), m_nCodepage(CP_ACP),
+			m_nBitOrder(BOM_NONE_MODE), m_nTargetCodepage(CP_ACP),
+			m_nTargetBitOrder(BOM_NONE_MODE), m_nTargetEndOfLine(NEWLINE_WIN_MODE),
+			m_sFilename(L""){};
 	~CDescriptionFileRW();
 };
 

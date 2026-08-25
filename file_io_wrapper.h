@@ -81,6 +81,7 @@ public:
 	 * @return Pointer to a string representation of IO error
 	 */
 	LPCTSTR GetIOErrorMsg();
+	IOWrapper(): m_lpcFileBuffer(NULL) {};
 };
 
 #endif

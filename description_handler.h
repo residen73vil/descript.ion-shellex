@@ -45,6 +45,7 @@ public:
 //TODO: Codepage maybe DOS OEM filenames maybe in dos format too
 //TODO: Hide descript.ion file
 	bool LoadFileToMap(LPCTSTR &filePath);
+	CDescriptionHandler(): m_nCommentsAdded(0){}
 };
 
 

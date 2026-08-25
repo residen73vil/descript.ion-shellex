@@ -2,9 +2,6 @@
 
 #define GetWindowLongPtr GetWindowLong
 #define SetWindowLongPtr SetWindowLong
-typedef long LONG_PTR;
-#define GWLP_USERDATA GWL_USERDATA
-#define GWLP_ID GWL_ID
 
 
 //-------------------------------------------------------------------------------
@@ -152,7 +149,7 @@ HRESULT __stdcall ShellPropSheetExtComClass::AddPages ( LPFNADDPROPSHEETPAGE lpf
 
 //Callbacks for the page in the property sheets window
 
-int CALLBACK PropPageDlgProc ( HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam ){
+RINT CALLBACK PropPageDlgProc ( HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam ){
 	BOOL bRet = FALSE;
 	DEBUG_LOG(L"PropPageDlgProc MSG", uMsg)
 	switch ( uMsg )
@@ -195,7 +192,7 @@ int CALLBACK PropPageDlgProc ( HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lPara
 	return bRet;
 }
 
-UINT CALLBACK PropPageCallbackProc ( HWND hwnd, UINT uMsg, LPPROPSHEETPAGE ppsp ){
+R2INT CALLBACK PropPageCallbackProc ( HWND hwnd, UINT uMsg, LPPROPSHEETPAGE ppsp ){
 		DEBUG_LOG(L"PropPageCallbackProc:", uMsg);
 		if ( PSPCB_RELEASE == uMsg ){
 			DEBUG_LOG(L"PropPageDlgProc freeing pAttachments", ppsp->lParam);
@@ -205,7 +202,7 @@ UINT CALLBACK PropPageCallbackProc ( HWND hwnd, UINT uMsg, LPPROPSHEETPAGE ppsp 
 	return 1; // used for PSPCB_CREATE - let the page be created
 }
 
-INT CALLBACK TabControlDlgProc ( HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam ){
+RINT CALLBACK TabControlDlgProc ( HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam ){
 	BOOL bRet = FALSE;
 	DEBUG_LOG(L"\tTabControl MSG", uMsg)
 	switch ( uMsg )
