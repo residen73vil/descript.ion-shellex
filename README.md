@@ -21,10 +21,17 @@ and start it again or just restart it, you can also use other means like holding
 **Ctrl+Alt+Shift** and click **Cancel** in the Shutdown menu. 
 
 #### Build on MSVC600 MSVC2005 can be done using:
-Firstly load the environment using $(msvc_path)\VC98\Bin\VCVARS32.BAT or $(msvc_path)\VC\vcvarsall.bat" amd64
-Then you cann run:
-    nmake /f Makefile.msvc ARCH=x86 BUILD=release
+Firstly load the environment using 
+
+	msvc_path\VC98\Bin\VCVARS32.BAT
 or
+
+	msvc_path\VC\vcvarsall.bat" amd64
+Then you cann run:
+
+	nmake /f Makefile.msvc ARCH=x86 BUILD=release
+or
+
 	nmake /f Makefile.msvc ARCH=x64 BUILD=release
 
 "nmake /f Makefile.msvc" defaults to "nmake /f Makefile.msvc ARCH=x86 BUILD=debug"
