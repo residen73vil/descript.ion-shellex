@@ -1,11 +1,11 @@
 #ifndef SHELLEXT_INIT_H
 #define SHELLEXT_INIT_H
 #include <objbase.h>
-#include <shobjidl.h>
+//#include <shobjidl.h>
 #include <shlobj.h>
 #include <shlguid.h>
 #include <windows.h>
-#include <fileapi.h>
+//#include <fileapi.h>
 #include <commctrl.h>
 #include <tchar.h>
 #include <string>
@@ -18,20 +18,20 @@ typedef std::list< std::basic_string<TCHAR> > string_list;
 // Forward declaration of the interface
 class  IShellExtInitComClass :
 	public IShellExtInit
- {
+{
 public:
-	virtual HRESULT __stdcall Initialize(LPCITEMIDLIST pidlFolder, IDataObject* pDataObj, HKEY hKeyProgID) override = 0;
+	virtual HRESULT __stdcall Initialize(LPCITEMIDLIST pidlFolder, IDataObject* pDataObj, HKEY hKeyProgID) = 0;
 };
 
 
 // Implement the COM Class
 class ShellExtInitComClass : public IShellExtInitComClass {
-protected:
+public:
 	string_list m_lsFiles;
 	TCHAR m_szPath[MAX_PATH];
-public:
 
-	HRESULT __stdcall Initialize(LPCITEMIDLIST pidlFolder, IDataObject* pDataObj, HKEY hKeyProgID) override ;
+
+	HRESULT __stdcall Initialize(LPCITEMIDLIST pidlFolder, IDataObject* pDataObj, HKEY hKeyProgID);
 
 };
 

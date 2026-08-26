@@ -6,6 +6,7 @@
 *.lo
 *.o
 *.obj
+*.res
 
 # Precompiled Headers
 *.gch
@@ -36,3 +37,9 @@ tags
 
 # Temp file
 *.swp
+
+#msvc files
+*.exp
+*.pdb
+*.idb
+*.manifest

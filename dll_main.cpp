@@ -1,6 +1,5 @@
 #include <windows.h>
 #include <objbase.h>
-#include <shobjidl.h>
 #include <shlobj.h>
 #include <shlguid.h>
 #include <iostream>
@@ -8,31 +7,33 @@
 #include "property_sheet.h"
 #include "column_provider.h"
 #include "dbg.h"
+#include "compiler_compatability.h"
 HINSTANCE g_dll_hInstance;
 UINT g_cActiveComponents = 0; //counts additional noncom components of the dll that are in use
 //TODO: Check for memory leakage!!!
+//TODO: Com works wrong, fix it
 
 
 //Class Factory, part of COM standart
 class ClassFactory : public IClassFactory {
 public:
 	// IUnknown methods
-	HRESULT __stdcall QueryInterface(REFIID riid, void **ppv) override {
+	HRESULT __stdcall QueryInterface(REFIID riid, void **ppv){
 		DEBUG_LOG_RIID( L"FactoryQuery:", riid)
 		if (riid == IID_IUnknown || riid == IID_IClassFactory) {
 			*ppv = static_cast<IClassFactory*>(this);
 			AddRef();
 			return S_OK;
 		}
-		*ppv = nullptr;
+		*ppv = NULL;
 		return E_NOINTERFACE;
 	}
 
-	ULONG __stdcall AddRef() override {
+	ULONG __stdcall AddRef(){
 		return InterlockedIncrement(&refCount);
 	}
 
-	ULONG __stdcall Release() override {
+	ULONG __stdcall Release(){
 		ULONG count = InterlockedDecrement(&refCount);
 		if (count == 0) {
 			delete this;
@@ -41,17 +42,17 @@ public:
 	}
 
 	// IClassFactory methods
-	HRESULT __stdcall CreateInstance(IUnknown *pUnkOuter, REFIID riid, void **ppv) override {
+	HRESULT __stdcall CreateInstance(IUnknown *pUnkOuter, REFIID riid, void **ppv){
 		DEBUG_LOG_RIID( L"FactoryInstance:", riid)
-		if (pUnkOuter != nullptr) {
+		if (pUnkOuter != NULL) {
 			return CLASS_E_NOAGGREGATION;
 		}
 		if ( riid == CLSID_ContextMenuClass  || riid == IID_IUnknown){
-			ContextMenuComClass *pClass = new ContextMenuComClass();
+			ContextMenuComClass *pClass = static_cast<ContextMenuComClass*>(new ShellPropSheetExtComClass());
 			return pClass->QueryInterface(riid, ppv);
 		}
 		if ( riid == IID_IContextMenu || riid == IID_IShellExtInit){
-			ContextMenuComClass *pClass = new ContextMenuComClass();
+			ContextMenuComClass *pClass = static_cast<ContextMenuComClass*>(new ShellPropSheetExtComClass());
 			return pClass->QueryInterface(riid, ppv);
 		}
 		if ( riid == IID_IShellPropSheetExt){
@@ -65,8 +66,8 @@ public:
 		return E_NOINTERFACE;
 	}
 
-	HRESULT __stdcall LockServer(BOOL fLock) override {
-		DEBUG_LOG( "LockServer", "lockserver called");
+	HRESULT __stdcall LockServer(BOOL fLock){
+		DEBUG_LOG( L"LockServer", L"lockserver called");
 		if (fLock) {
 			InterlockedIncrement(&lockCount);
 		} else {
@@ -79,8 +80,9 @@ public:
 		return lockCount;
 	}
 
+	ClassFactory(): refCount(1){};
 private:
-	LONG refCount = 1;
+	LONG refCount;
 	static LONG lockCount;	// Lock count for the class factory
 };
 
@@ -88,24 +90,25 @@ LONG ClassFactory::lockCount = 0; // Initialize static member
 
 // DLL entry point
 BOOL WINAPI DllMain(HINSTANCE hInstance, DWORD fdwReason, LPVOID lpvReserved) {
-    switch (fdwReason) {
-    case DLL_PROCESS_ATTACH:
+	switch (fdwReason) {
+	case DLL_PROCESS_ATTACH:
 		// Set file to output debug log into
 		g_dll_hInstance = hInstance;
-		DEBUG_INIT("c:\\Logs\\dbg.log");
-		DEBUG_LOG( "dllmain", "dll loaded");
+		OutputDebugString(L"test");
+		//DEBUG_INIT("c:\\Logs\\dbg.log");
+		DEBUG_LOG( L"dllmain", L"dll loaded");
 		break;
-    case DLL_PROCESS_DETACH:
-		DEBUG_LOG( "dllmain", "dll unloaded");
+	case DLL_PROCESS_DETACH:
+		DEBUG_LOG( L"dllmain", L"dll unloaded");
 		DEBUG_CLOSE
-        break;
+		break;
 	case DLL_THREAD_ATTACH:
-		DEBUG_LOG( "dllmain", "dll thread loaded");
+		DEBUG_LOG( L"dllmain", L"dll thread loaded");
 		break;
-    case DLL_THREAD_DETACH:
-		DEBUG_LOG( "dllmain", "dll thread unloaded");
+	case DLL_THREAD_DETACH:
+		DEBUG_LOG( L"dllmain", L"dll thread unloaded");
 		break;
-    }
+	}
 	return TRUE;
 }
 
@@ -129,8 +132,10 @@ extern "C" __declspec(dllexport) HRESULT CreateContextMenuComClass(IContextMenuC
 	return S_OK;
 }
 
+//#pragma comment(linker, "/export:DllGetClassObject=_DllGetClassObject@12")
 // DllGetClassObject implementation
-extern "C" __declspec(dllexport)	HRESULT	DllGetClassObject(REFCLSID rclsid, REFIID riid, void **ppv) {
+extern "C" HRESULT __stdcall DllGetClassObject(REFCLSID rclsid, REFIID riid, LPVOID FAR*ppv) {
+	DEBUG_LOG_RIID( L"DllGetCalassObject", riid)
 	if (rclsid == CLSID_ContextMenuClass) {
 		ClassFactory* factory = new ClassFactory();
 		return factory->QueryInterface(riid, ppv);
@@ -140,12 +145,51 @@ extern "C" __declspec(dllexport)	HRESULT	DllGetClassObject(REFCLSID rclsid, REFI
 }
 
 //Is it safe to unload the dll
-STDAPI DllCanUnloadNow() {
-    // Check if the server is locked
-    if (ClassFactory::get_lockCount() == 0 && g_cActiveComponents == 0) {
-		DEBUG_LOG("DllCanUnloadNow", "Can be unloaded");
-        return S_OK; // Safe to unload
-    }
-	DEBUG_LOG("DllCanUnloadNow", "Not allowed to unload");
-    return S_FALSE; // Not safe to unload
+//TODO: Doesn't seem to actually work, fix that.
+extern "C" __declspec(dllexport) STDAPI DllCanUnloadNow() {
+	// Check if the server is locked
+	if (ClassFactory::get_lockCount() == 0 && g_cActiveComponents == 0) {
+		DEBUG_LOG(L"DllCanUnloadNow", L"Can be unloaded");
+		return S_OK; // Safe to unload
+	}
+	DEBUG_LOG(L"DllCanUnloadNow", L"Not allowed to unload");
+	return S_FALSE; // Not safe to unload
+}
+
+//look for other classes dll implements
+//TODO: Add "this" and make it the only function converting classes or something
+//WARNING: Broken for now!
+HRESULT LookForAnotherImplementedClass(REFIID riid, LPVOID FAR*ppv) {
+	DEBUG_LOG_RIID( L"LookForAnotherImplementedClass", riid)
+	static ShellPropSheetExtComClass *shellextInit = NULL;
+	/*if ( riid == IID_IContextMenu ){
+		ContextMenuComClass *pClass = new ContextMenuComClass();
+		return pClass->QueryInterface(riid, ppv);
+	}
+	if (riid == IID_IShellExtInit){
+		ShellExtInitComClass *pClass = NULL;
+		if (shellextInit != NULL)
+			pClass = (ShellExtInitComClass*) shellextInit;
+		else{
+			pClass = (ShellExtInitComClass*) new ShellPropSheetExtComClass();
+			pClass->AddRef();
+			shellextInit = (ShellPropSheetExtComClass*) pClass;
+		}
+		//__asm { int 3 };
+		return pClass->QueryInterface(riid, ppv);
+	}
+	if ( riid == IID_IShellPropSheetExt ){
+		ShellPropSheetExtComClass *pClass = NULL;
+		if (shellextInit != NULL)
+			pClass = shellextInit;
+		else{
+			pClass = new ShellPropSheetExtComClass();
+			pClass->AddRef();
+			shellextInit = pClass;
+		}
+		//__asm { int 3 };
+		return pClass->QueryInterface(riid, ppv);
+	}
+	*ppv = NULL;*/
+	return E_NOINTERFACE;
 }

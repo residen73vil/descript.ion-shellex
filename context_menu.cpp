@@ -1,6 +1,10 @@
 #include "context_menu.h"
 #include "dbg.h"
-
+#include "com_helper.h"
+#include "property_sheet.h"
+#ifndef IS_INTRESOURCE
+#define IS_INTRESOURCE(_r) (((ULONG)(_r) >> 16) == 0)
+#endif
 HRESULT __stdcall ContextMenuComClass::QueryInterface(REFIID riid, void **ppv) {
 	DEBUG_LOG_RIID(L"ContextMenuComClass", riid) ;
 
@@ -11,17 +15,27 @@ HRESULT __stdcall ContextMenuComClass::QueryInterface(REFIID riid, void **ppv) {
 	}
 	if ( riid == IID_IContextMenu) {
 		*ppv = static_cast<IContextMenu*>(this);
-		 	AddRef();
-			return NOERROR;
-		}
+		 AddRef();
+		return NOERROR;
+	}
 	if ( riid == IID_IShellExtInit) {
 		DEBUG_LOG(L"ContextMenuComClass", "return IShellExtInit") ;
 		*ppv = static_cast<ShellExtInitComClass*>(this);
-			AddRef();
-			return NOERROR;
-		}
-		*ppv = nullptr;
-		return E_NOINTERFACE;
+		AddRef();
+		return NOERROR;
+	}
+	if ( riid == IID_IShellExtInit) {
+		DEBUG_LOG(L"ContextMenuComClass", "return IShellExtInit") ;
+		*ppv = static_cast<ShellExtInitComClass*>(this);
+		AddRef();
+		return NOERROR;
+	}
+	if ( riid == IID_IShellPropSheetExt ) {
+		*ppv = static_cast<ShellExtInitComClass*>(this);
+		AddRef();
+		return NOERROR;
+	}
+	return LookForAnotherImplementedClass(riid, ppv);
 }
 
 ULONG __stdcall ContextMenuComClass::AddRef() {
@@ -64,7 +78,7 @@ HRESULT __stdcall ContextMenuComClass::InvokeCommand(LPCMINVOKECOMMANDINFO pici)
 }
 
 //Shows a comment for the menu item in the status bar
-HRESULT __stdcall ContextMenuComClass::GetCommandString(UINT_PTR idCmd, UINT uType, UINT *pwResv, LPSTR pszName, UINT cchMax) {
+long __stdcall ContextMenuComClass::GetCommandString(CINT idCmd, UINT uType, UINT *pwResv, LPSTR pszName, UINT cchMax) {
 	//todo: implement if menu item persists
 	return S_OK;
 }

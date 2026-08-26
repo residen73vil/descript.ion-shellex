@@ -1,12 +1,12 @@
 #ifndef DESCRIPTION_HANDLER_H
 #define DESCRIPTION_HANDLER_H
 #include <windows.h>
-#include <fileapi.h>
+//#include <fileapi.h>
 #include <tchar.h>
 #include <string>
 #include <list>
 #include <vector>
-#include <unordered_map>
+#include <map>
 #include <sstream>
 #include "errors_and_settings.h"
 #include "dbg.h" 
@@ -19,12 +19,12 @@ typedef std::list< std::basic_string<TCHAR> > string_list;
 class  CDescriptionHandler
 {
 private:
-	std::unordered_map<std::basic_string<TCHAR>, std::basic_string<TCHAR>> m_comments_map;
-	std::unordered_map<std::basic_string<TCHAR>, int> m_linenumber_map;
-	std::unordered_map<int, std::wstring> m_mChanges;
-	std::unordered_map<std::wstring,int> m_mNewLines;
+	std::map<std::basic_string<TCHAR>, std::basic_string<TCHAR> > m_comments_map;
+	std::map<std::basic_string<TCHAR>, int> m_linenumber_map;
+	std::map<int, std::wstring> m_mChanges;
+	std::map<std::wstring,int> m_mNewLines;
 	std::wstring m_filename;
-	int m_nCommentsAdded = 0; //counts how may new comments were added 
+	int m_nCommentsAdded; //counts how may new comments were added 
 public:
 	bool LoadFile(LPCTSTR filename);
 	bool LoadPath(LPCTSTR path); //calls LoadFile("%path%\\descript.ion")
@@ -45,6 +45,7 @@ public:
 //TODO: Codepage maybe DOS OEM filenames maybe in dos format too
 //TODO: Hide descript.ion file
 	bool LoadFileToMap(LPCTSTR &filePath);
+	CDescriptionHandler(): m_nCommentsAdded(0){}
 };
 
 

@@ -5,7 +5,7 @@
 size_t swap_bytes(char* to, char* from, size_t length_in_bytes){
 	if ( 0 != length_in_bytes %2) //cant swipe non multiple of 2
 		return 0;
-	for (int i = 0; i < length_in_bytes; i+=2){
+	for (UINT i = 0; i < length_in_bytes; i+=2){
 		to[i] = from[i+1];
 		to[i+1] = from[i];
 	}
@@ -62,7 +62,7 @@ size_t add_eol_or_bom(char* to, UINT mode, UINT codepage, INT is_bom){
 					*to = NEWLINE_MAC[0];
 					return 1;
 				}
-		    	break;
+				break;
 			default:
 				return 0;
 				break;
@@ -85,7 +85,7 @@ size_t add_eol_or_bom(char* to, UINT mode, UINT codepage, INT is_bom){
 				*to = BOM_UTF16_BE[0];
 				*(to+1) = BOM_UTF16_BE[1];
 				return 2;
-		    	break;
+				break;
 			case BOM_NONE_MODE:
 				return 0;
 				break;
@@ -107,32 +107,32 @@ size_t eol_size(UINT mode, UINT codepage, INT is_bom){
 			break;
 		case BOM_UTF16_LE_MODE:
 		case BOM_UTF16_BE_MODE:
-	    	result = 2;
-	    	break;
+			result = 2;
+			break;
 		case BOM_NONE_MODE:
 			result = 0;
 			break;
 		case -1:
 		default:
 			break;
-	}  
+	}
 	
 	return result;
 }
 
-#define SPLESH_0		0b11
-#define SPLESH_n		0b10
-#define SPLESH_r		0b01
+#define SPLESH_0		0x3
+#define SPLESH_n		0x2
+#define SPLESH_r		0x1
 
-#define EOL_0r0n	SPLESH_0<<6 | SPLESH_r<<4 | SPLESH_0<<2 | SPLESH_n
-#define EOL_r0n0	SPLESH_r<<6 | SPLESH_0<<4 | SPLESH_n<<2 | SPLESH_0
-#define EOL_rn		SPLESH_r<<2 | SPLESH_n
-#define EOL_0n		SPLESH_0<<2 | SPLESH_n
-#define EOL_n0		SPLESH_n<<2 | SPLESH_0
-#define EOL_n		SPLESH_n
-#define EOL_0r		SPLESH_0<<2 | SPLESH_r
-#define EOL_r0		SPLESH_r<<2 | SPLESH_0
-#define EOL_r		SPLESH_r
+#define EOL_0r0n	(SPLESH_0<<6 | SPLESH_r<<4 | SPLESH_0<<2 | SPLESH_n)
+#define EOL_r0n0	(SPLESH_r<<6 | SPLESH_0<<4 | SPLESH_n<<2 | SPLESH_0)
+#define EOL_rn		(SPLESH_r<<2 | SPLESH_n)
+#define EOL_0n		(SPLESH_0<<2 | SPLESH_n)
+#define EOL_n0		(SPLESH_n<<2 | SPLESH_0)
+#define EOL_n		(SPLESH_n)
+#define EOL_0r		(SPLESH_0<<2 | SPLESH_r)
+#define EOL_r0		(SPLESH_r<<2 | SPLESH_0)
+#define EOL_r		(SPLESH_r)
 
 size_t is_eol(char* place, char* limit){
 //TODO: a utf16 symbol U+0D0A ("Malayalam Letter Lla") can be mistaken for \r\n, fix that 

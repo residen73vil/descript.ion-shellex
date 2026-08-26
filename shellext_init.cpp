@@ -59,7 +59,7 @@ HRESULT __stdcall ShellExtInitComClass::Initialize(LPCITEMIDLIST pidlFolder, IDa
 			m_lsFiles.push_back ( szFileName );
 		}
 		
-	}   // end for
+	}// end for
 
 	// Release resources.
 	GlobalUnlock ( stg.hGlobal );
@@ -80,15 +80,15 @@ HRESULT __stdcall ShellExtInitComClass::Initialize(LPCITEMIDLIST pidlFolder, IDa
 
 //Returns file name and path of an existing file
 bool GetFileNameAndPath(LPCTSTR szFile, TCHAR* lpFileName, TCHAR* lpFilePath, bool bSkipPathOptimization) {
-    // Pointer to hold the file part
-    TCHAR fullPath[MAX_PATH];
+	// Pointer to hold the file part
+	TCHAR fullPath[MAX_PATH];
 	TCHAR *lpFilePart;
-    // Get the full path
-    DWORD result = GetFullPathName(szFile, MAX_PATH, fullPath, &lpFilePart);
+	// Get the full path
+	DWORD result = GetFullPathName(szFile, MAX_PATH, fullPath, &lpFilePart);
 
-    if (result > 0 && result < MAX_PATH) {
-        // Copy the file name
-        if (lpFilePart != nullptr) {
+	if (result > 0 && result < MAX_PATH) {
+		// Copy the file name
+		if (lpFilePart != NULL) {
 			_tcsncpy(lpFileName, lpFilePart, MAX_PATH);
 			// Null-terminate the path
 			if (!bSkipPathOptimization)
@@ -97,11 +97,11 @@ bool GetFileNameAndPath(LPCTSTR szFile, TCHAR* lpFileName, TCHAR* lpFilePath, bo
 				_tcsncpy(lpFilePath, fullPath, MAX_PATH);
 			} else {
 				*lpFilePath = _T('\0'); //skip path, set path to ""
-			} 
+			}
 		}
-        return true; // Success
-    } else {
-        // Handle error
-        return false; // Failure
-    }
+		return true; // Success
+	} else {
+		// Handle error
+		return false; // Failure
+	}
 }

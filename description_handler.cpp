@@ -3,7 +3,7 @@
 
 bool CDescriptionHandler::LoadFile(LPCTSTR filename)
 {
-	DEBUG_LOG( "CDescriptionHandler::LoadFile", filename);
+	DEBUG_LOG( L"CDescriptionHandler::LoadFile", filename);
 	m_filename = std::wstring(filename); //saving file name for latter use
 	LoadFileToMap(filename);
 	return true;
@@ -25,7 +25,7 @@ bool CDescriptionHandler::SaveChanges()
 		CDescriptionFileRW file_reader;
 		file_reader.LoadFile(m_filename.c_str());
 		file_reader.FindLines();
-		for (std::unordered_map<int, std::wstring>::iterator it = m_mChanges.begin(); it != m_mChanges.end(); ++it){
+		for (std::map<int, std::wstring>::iterator it = m_mChanges.begin(); it != m_mChanges.end(); ++it){
 			file_reader.ChangeLine( it->first, &(it->second) );
 		}
 		file_reader.ConvertAndSaveChanges(file_reader.m_nCodepage, CErrorsAndSettings::getInstance().getSettings().bom);
@@ -65,7 +65,7 @@ bool CDescriptionHandler::ReadCommentWithChanges(LPCTSTR filename, /*out*/ std::
 	//then in m_mNewLines
 	}else if (!m_mNewLines.empty())
 	{
-		for (std::unordered_map<std::wstring, int>::iterator it = m_mNewLines.begin(); it != m_mNewLines.end(); ++it){
+		for (std::map<std::wstring, int>::iterator it = m_mNewLines.begin(); it != m_mNewLines.end(); ++it){
 			if (it->first == key){
 				std::basic_string<TCHAR> extractedFname;
 				std::basic_string<TCHAR> extractedComment;
@@ -88,8 +88,8 @@ bool CDescriptionHandler::SeparateCommentAndFileName(std::basic_string<TCHAR> li
 			pos = pos - 1; //correct to accommodate deletions
 			line.erase(pos,1); //get rid of last \"
 		} else {
-			DEBUG_LOG("LoadFileToMap:error in descript.ion file",
-							"filename is too small/large");
+			DEBUG_LOG(L"LoadFileToMap:error in descript.ion file",
+							L"filename is too small/large");
 			return false; //skip broken filename
 		}
 	} else {
@@ -136,7 +136,7 @@ bool CDescriptionHandler::AddChangeComment(LPCTSTR filename, LPCTSTR comment)
 		m_mChanges[line_num] = line;
 	} else {
 		std::wstring key = std::wstring(filename);
-		std::unordered_map<std::wstring, int>::iterator it = m_mNewLines.end();
+		std::map<std::wstring, int>::iterator it = m_mNewLines.end();
 		if (!m_mNewLines.empty()){
 			it = m_mNewLines.find(key);
 		}
@@ -176,7 +176,7 @@ bool CDescriptionHandler::LoadFileToMap(LPCTSTR &filePath) {
 		std::basic_string<TCHAR> extractedComment;
 		SeparateCommentAndFileName(line, extractedFname, extractedComment);
 		if (m_comments_map.count(extractedFname) > 0) {
-			DEBUG_LOG("LoadFileToMap:error in descript.ion filename mentioned several times", extractedFname );
+			DEBUG_LOG(L"LoadFileToMap:error in descript.ion filename mentioned several times", extractedFname );
 			//old value will be overwritten!
 			//TODO: does nothing on non-debug builds, so add something here!
 		}
@@ -231,8 +231,8 @@ MultiLineStyle CDescriptionHandler::Demultilinefy(const std::wstring& lineIn,
 	if (mode == AUTO)
 		mode = DetectMode(lineIn);
 
-	lineOut.clear();
-	commentProgData.clear();
+	lineOut.erase();
+	commentProgData.erase();
 	size_t i = 0;
 	switch (mode) {
 	case DOUBLECMD: {
@@ -241,13 +241,13 @@ MultiLineStyle CDescriptionHandler::Demultilinefy(const std::wstring& lineIn,
 		for (i = 0; i < lineIn.size(); ++i) {
 			if (i + 1 < lineIn.size() &&
 				lineIn[i] == NBSP) {
-				lineOut.push_back(L'\r');
-				lineOut.push_back(L'\n');
+				lineOut.append(1, L'\r');
+				lineOut.append(1, L'\n');
 			} else {
 				if (lineIn[i] == PROG_DATA){
 					break; // stop copping if prog data is reached
 				}
-				lineOut.push_back(lineIn[i]);
+				lineOut.append(1, lineIn[i]);
 			}
 		}
 		break;
@@ -264,18 +264,18 @@ MultiLineStyle CDescriptionHandler::Demultilinefy(const std::wstring& lineIn,
 				// Detect the two‑character sequence \"\\n\"
 				if (i + 1 < lineIn.size() &&
 					lineIn[i] == L'\\' && lineIn[i + 1] == L'n') {
-					lineOut.push_back(L'\r');
-					lineOut.push_back(L'\n');
+					lineOut.append(1, L'\r');
+					lineOut.append(1, L'\n');
 					++i; // skip the 'n'
 				} else {
 					if (lineIn[i] == PROG_DATA){
 						break; // stop copping if prog data is reached
 					}
-					lineOut.push_back(lineIn[i]);
+					lineOut.append(1, lineIn[i]);
 				}
 			}
 			break;
-		} 
+		}
 		// If no totalcmd multiline mark present, proceed father to plain copy
 	}
 
@@ -286,7 +286,7 @@ MultiLineStyle CDescriptionHandler::Demultilinefy(const std::wstring& lineIn,
 			if (lineIn[i] == PROG_DATA){
 				break; // stop copping if prog data is reached
 			}
-			lineOut.push_back(lineIn[i]);
+			lineOut.append(1, lineIn[i]);
 		}
 		break;
 	}
@@ -299,7 +299,7 @@ MultiLineStyle CDescriptionHandler::Demultilinefy(const std::wstring& lineIn,
 					lineIn[i] == PROG_DATA && lineIn[i + 1] == TOTALCMD_ID){
 				++i; // don't copy totalcmd multi line mark
 			}else{
-				commentProgData.push_back(lineIn[i]);}
+				commentProgData.append(1, lineIn[i]);}
 		}
 	}
 	return mode;
@@ -318,7 +318,7 @@ MultiLineStyle CDescriptionHandler::Multilinefy(const std::wstring& lineIn,
 	if (mode == AUTO)
 		mode = TOTALCMD;
 
-	lineOut.clear();
+	lineOut.erase();
 
 	switch (mode) {
 	case DOUBLECMD: {
@@ -327,10 +327,10 @@ MultiLineStyle CDescriptionHandler::Multilinefy(const std::wstring& lineIn,
 		for (size_t i = 0; i < lineIn.size(); ++i) {
 			if (i + 1 < lineIn.size() &&
 					lineIn[i] == L'\r' && lineIn[i+1] == L'\n'){
-				lineOut.push_back(NBSP);
+				lineOut.append(1, NBSP);
 				++i; //skip \n
 			}else{
-				lineOut.push_back(lineIn[i]);
+				lineOut.append(1, lineIn[i]);
 			}
 		}
 		break;
@@ -344,16 +344,16 @@ MultiLineStyle CDescriptionHandler::Multilinefy(const std::wstring& lineIn,
 		for (size_t i = 0; i < lineIn.size(); ++i) {
 			if (i + 1 < lineIn.size() &&
 					lineIn[i] == L'\r' && lineIn[i+1] == L'\n'){
-				lineOut.append(L"\\n");
+				lineOut += L"\\n";
 				bMultiLine = true;
 				++i; //skip \n
 			}else{
-				lineOut.push_back(lineIn[i]);
+				lineOut.append(1, lineIn[i]);
 			}
 		}
 		if (bMultiLine){ // multi line mark is only written if there are new lines
-			lineOut.push_back(PROG_DATA);
-			lineOut.push_back(TOTALCMD_ID);
+			lineOut.append(1, PROG_DATA);
+			lineOut.append(1, TOTALCMD_ID);
 		}
 		break;
 	}
@@ -364,10 +364,10 @@ MultiLineStyle CDescriptionHandler::Multilinefy(const std::wstring& lineIn,
 		for (size_t i = 0; i < lineIn.size(); ++i) {
 			if (i + 1 < lineIn.size() &&
 					lineIn[i] == L'\r' && lineIn[i+1] == L'\n'){
-				lineOut.append(L"  ");
+				lineOut += L"  ";
 				++i; //skip \n
 			}else{
-				lineOut.push_back(lineIn[i]);
+				lineOut.append(1, lineIn[i]);
 			}
 		}
 		break;

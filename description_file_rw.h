@@ -1,14 +1,14 @@
 #ifndef DESCRIPTION_FILE_RW_H
 #define DESCRIPTION_FILE_RW_H
 #include <windows.h>
-#include <fileapi.h>
+//#include <fileapi.h>
 #include <tchar.h>
 #include <string>
 #include <list>
 #include <vector>
 #include <sstream>
 #include <map>
-#include <tuple>
+#include "tuple.h"
 #include "bom_cp_eol_utils.h"
 
 #include "dbg.h" 
@@ -20,7 +20,7 @@
 
 typedef std::list< std::basic_string<TCHAR> > string_list;
 //holds initial size of a line, size of the line to write and pointer to the line (must be freed after use!)
-typedef std::tuple< size_t, size_t, char* > tuple_2_sizes_and_ptr;
+typedef msvc_tuple< size_t, size_t, char* > tuple_2_sizes_and_ptr;
 
 // Forward declaration of the interface
 class  CDescriptionFileRW
@@ -29,17 +29,17 @@ private:
 	char* m_lpcFileBuffer;
 	IOWrapper m_file_io;
 	char* m_lpcFileBuffer_to_write; // buuffer with
-	UINT m_nFileSize = 0;
-	UINT m_nFileSizeWithoutBOM = 0;
+	UINT m_nFileSize;
+	UINT m_nFileSizeWithoutBOM;
 	std::vector< std::pair<char*,char*> > m_vLines; //line bonds in m_lpcFileBuffer
 	std::map<int,std::wstring> m_mChanges; //lines to be replaced 
 public:
-	std::wstring m_sFilename = L"";
-	UINT m_nCodepage = CP_ACP;
-	UINT m_nBitOrder = BOM_NONE_MODE;
-	UINT m_nTargetCodepage = CP_ACP;
-	UINT m_nTargetBitOrder = BOM_NONE_MODE;
-	UINT m_nTargetEndOfLine = NEWLINE_WIN_MODE;
+	std::wstring m_sFilename;
+	UINT m_nCodepage;
+	UINT m_nBitOrder;
+	UINT m_nTargetCodepage;
+	UINT m_nTargetBitOrder;
+	UINT m_nTargetEndOfLine;
 	
 	bool LoadFile(LPCTSTR filename);
 	
@@ -146,7 +146,10 @@ public:
 	*/
 	int GetConvertedLine(int number, /*out*/ std::wstring* line);
 
-
+	CDescriptionFileRW(): m_nFileSize(0), m_nFileSizeWithoutBOM(0), m_nCodepage(CP_ACP),
+			m_nBitOrder(BOM_NONE_MODE), m_nTargetCodepage(CP_ACP),
+			m_nTargetBitOrder(BOM_NONE_MODE), m_nTargetEndOfLine(NEWLINE_WIN_MODE),
+			m_sFilename(L""){};
 	~CDescriptionFileRW();
 };
 

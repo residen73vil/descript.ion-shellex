@@ -1,7 +1,7 @@
 #ifndef IO_WRAPPER_H
 #define IO_WRAPPER_H
 
-#include <fileapi.h>
+//#include <fileapi.h>
 #include <windows.h>
 #include "dbg.h"
 
@@ -20,14 +20,14 @@
 class IOWrapper
 
 {
-const wchar_t* ERROR_ACCESS_DENIED_MSG = L"Access denied.\n";
-const wchar_t* ERROR_DISK_FULL_MSG = L"Disk is full.\n";
-const wchar_t* ERROR_IO_DEVICE_MSG = L"I/O device error.\n";
+static const wchar_t* ERROR_ACCESS_DENIED_MSG;
+static const wchar_t* ERROR_DISK_FULL_MSG;
+static const wchar_t* ERROR_IO_DEVICE_MSG;
 
-DWORD m_error = 0;
+static DWORD m_error;
 
 public:
-	char* m_lpcFileBuffer = nullptr; //holds buffer with data read from the file
+	char* m_lpcFileBuffer; //holds buffer with data read from the file
 
 	bool CheckIfFileExists(LPCTSTR filename);
 
@@ -81,6 +81,7 @@ public:
 	 * @return Pointer to a string representation of IO error
 	 */
 	LPCTSTR GetIOErrorMsg();
+	IOWrapper(): m_lpcFileBuffer(NULL) {};
 };
 
 #endif

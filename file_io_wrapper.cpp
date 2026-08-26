@@ -7,13 +7,13 @@ size_t IOWrapper::LoadFileIntoBuffer(LPCTSTR filename, char** buffer){
 									FILE_ATTRIBUTE_NORMAL, NULL);
 	
 	if (hFile == INVALID_HANDLE_VALUE) {
-		DEBUG_LOG("Error opening file", GetLastError());
+		//DEBUG_LOG(L"Error opening file",  L"ddd" ); //GetLastError());
 		return 0;
 	}
 	//TODO: limit file size to prevent stack overflow
 	DWORD fileSize = GetFileSize(hFile, NULL);
 	if (fileSize == INVALID_FILE_SIZE) {
-		DEBUG_LOG("LoadFileToMap:Error getting file size", GetLastError());
+		//DEBUG_LOG(L"LoadFileToMap:Error getting file size", GetLastError());
 		CloseHandle(hFile);
 		return 0;
 	}
@@ -21,7 +21,7 @@ size_t IOWrapper::LoadFileIntoBuffer(LPCTSTR filename, char** buffer){
 	m_lpcFileBuffer =  new char[fileSize / sizeof(CHAR) + 1];
 	DWORD bytesRead;
 	if (!ReadFile(hFile, m_lpcFileBuffer, fileSize, &bytesRead, NULL)) {
-		DEBUG_LOG("LoadFileToMap:Error reading file", GetLastError());
+		//DEBUG_LOG(L"LoadFileToMap:Error reading file", GetLastError());
 		CloseHandle(hFile);
 		return 0;
 	}
@@ -29,22 +29,22 @@ size_t IOWrapper::LoadFileIntoBuffer(LPCTSTR filename, char** buffer){
 	*buffer = m_lpcFileBuffer;
 	return bytesRead;
 }
-
+#define INVALID_FILE_ATTRIBUTES 0xFFFFFFFFUL
 bool IOWrapper::CheckIfFileExists(LPCTSTR filename) {
-    // Check if the file exists
-    DWORD fileAttributes = GetFileAttributes(filename);
-    if (fileAttributes == INVALID_FILE_ATTRIBUTES) {
-        if (GetLastError() == ERROR_FILE_NOT_FOUND) {
-            // File does not exist
-            return false; // File does not exist
-        } else {
-            // Some other error occurred
-            m_error = GetLastError(); // Get the error code
-            DEBUG_LOG("GetFileAttributes failed. Error: ", m_error);
+	// Check if the file exists
+	DWORD fileAttributes = GetFileAttributes(filename);
+	if (fileAttributes == INVALID_FILE_ATTRIBUTES) {
+		if (GetLastError() == ERROR_FILE_NOT_FOUND) {
+			// File does not exist
+			return false; // File does not exist
+		} else {
+			// Some other error occurred
+			m_error = GetLastError(); // Get the error code
+			//DEBUG_LOG(L"GetFileAttributes failed. Error: ", m_error);
 			CErrorsAndSettings::IOError(m_error);
-            return false; // Indicate failure
-        }
-    }
+			return false; // Indicate failure
+		}
+	}
 	return true;
 }
 size_t IOWrapper::WriteBufferIntoFile(LPCTSTR filename, char* buffer, size_t size ){
@@ -60,7 +60,7 @@ size_t IOWrapper::WriteBufferIntoFile(LPCTSTR filename, char* buffer, size_t siz
 	
 	if (hFile == INVALID_HANDLE_VALUE) {
 		m_error  = GetLastError(); // Get the error code
-		DEBUG_LOG("CreateFile failed. Error: ", m_error);
+		//DEBUG_LOG(L"CreateFile failed. Error: ", m_error);
 		CErrorsAndSettings::IOError(m_error);
 	} else if (!WriteFile(hFile, buffer, size, &bytesWritten, NULL)) { 
 		m_error = GetLastError(); // Get the error code
@@ -71,7 +71,15 @@ size_t IOWrapper::WriteBufferIntoFile(LPCTSTR filename, char* buffer, size_t siz
 }
 
 void IOWrapper::CleanupBuffersMemory(){
-	if (nullptr != m_lpcFileBuffer){
+	if (NULL != m_lpcFileBuffer){
 		delete[] m_lpcFileBuffer;
 	}
 }
+
+
+
+const wchar_t* IOWrapper::ERROR_ACCESS_DENIED_MSG = L"Access denied.\n";
+const wchar_t* IOWrapper::ERROR_DISK_FULL_MSG = L"Disk is full.\n";
+const wchar_t* IOWrapper::ERROR_IO_DEVICE_MSG = L"I/O device error.\n";
+
+DWORD IOWrapper::m_error = 0;

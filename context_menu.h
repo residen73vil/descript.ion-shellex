@@ -1,10 +1,11 @@
 #ifndef CONTEXT_MENU_H
 #define CONTEXT_MENU_H
 #include <objbase.h>
-#include <shobjidl.h>
+//#include <shobjidl.h>
 #include <shlobj.h>
 #include <shlguid.h>
 #include "shellext_init.h"
+#include "compiler_compatability.h"
 
 // Define a GUID for the COM class
 //{ed730b9b-5779-4692-9e36-f7d9a4e86e06}
@@ -13,18 +14,18 @@ const GUID IID_IContextMenuComClass = { 0xed730b9b, 0x5779, 0x4692, { 0x9e, 0x36
 const GUID CLSID_ContextMenuClass = { 0x5629FF98, 0xE953, 0x466D, { 0x84, 0x80, 0x3D, 0xD3, 0xC5, 0x54, 0xAB, 0x09 } };
 
 // Forward declaration of the interface
-class IContextMenuComClass : 
+class IContextMenuComClass :
 	public IContextMenu,
 	public ShellExtInitComClass
  {
 public:
-        // IContextMenu methods
-    virtual HRESULT __stdcall QueryContextMenu(HMENU hMenu, UINT indexMenu, UINT idCmdFirst,
-                                        UINT idCmdLast, UINT uFlags) override = 0;
+		// IContextMenu methods
+	virtual HRESULT __stdcall QueryContextMenu(HMENU hMenu, UINT indexMenu, UINT idCmdFirst,
+										UINT idCmdLast, UINT uFlags) = 0;
 
-    virtual HRESULT __stdcall InvokeCommand(LPCMINVOKECOMMANDINFO pici) override = 0;
+	virtual HRESULT __stdcall InvokeCommand(LPCMINVOKECOMMANDINFO pici) = 0;
 
-    virtual HRESULT __stdcall GetCommandString(UINT_PTR idCmd, UINT uType, UINT *pwResv, LPSTR pszName, UINT cchMax) override = 0;
+	virtual long __stdcall GetCommandString(CINT idCmd, UINT uType, UINT *pwResv, LPSTR pszName, UINT cchMax) = 0;
 };
 
 
@@ -38,19 +39,19 @@ public:
 	}
 	
 	
-	HRESULT __stdcall QueryInterface(REFIID riid, void **ppv) override;
+	HRESULT __stdcall QueryInterface(REFIID riid, void **ppv);
 
-	ULONG __stdcall AddRef() override ;
+	ULONG __stdcall AddRef();
 
-	ULONG __stdcall Release() override ;
+	ULONG __stdcall Release();
 
 		// IContextMenu methods
 	//Adds items to the menu
-	HRESULT __stdcall QueryContextMenu(HMENU hMenu, UINT indexMenu, UINT idCmdFirst, UINT idCmdLast, UINT uFlags) override ;
+	HRESULT __stdcall QueryContextMenu(HMENU hMenu, UINT indexMenu, UINT idCmdFirst, UINT idCmdLast, UINT uFlags);
 	//Invoked when the item is clicked
-	HRESULT __stdcall InvokeCommand(LPCMINVOKECOMMANDINFO pici) override ;
+	HRESULT __stdcall InvokeCommand(LPCMINVOKECOMMANDINFO pici);
 	//Shows a comment for the menu item in the status bar
-	HRESULT __stdcall GetCommandString(UINT_PTR idCmd, UINT uType, UINT *pwResv, LPSTR pszName, UINT cchMax) override ;
+	long __stdcall GetCommandString(CINT idCmd, UINT uType, UINT *pwResv, LPSTR pszName, UINT cchMax);
 private:
 	LONG refCount;
 };
