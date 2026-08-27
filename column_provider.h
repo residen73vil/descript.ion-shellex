@@ -1,9 +1,9 @@
 #ifndef COLUMN_PROVIDER_H
 #define COLUMN_PROVIDER_H
 #include <objbase.h>
-#include <shobjidl.h>
 #include <shlobj.h>
 #include <shlguid.h>
+#include "compiler_compatability.h"
 #include "shellext_init.h"
 
 // Define a GUID for the COM class
@@ -20,9 +20,9 @@ class IColumnProviderComClass :
  {
 public:
 		// IColumnProvider methods
-	virtual HRESULT __stdcall Initialize(LPCSHCOLUMNINIT psci) override=0;
-	virtual HRESULT __stdcall GetColumnInfo(DWORD dwIndex, SHCOLUMNINFO* psci) override=0;
-	virtual HRESULT __stdcall GetItemData(LPCSHCOLUMNID pscid, LPCSHCOLUMNDATA pscd, VARIANT* pvarData) override=0;
+	virtual HRESULT __stdcall Initialize(LPCSHCOLUMNINIT psci) =0;
+	virtual HRESULT __stdcall GetColumnInfo(DWORD dwIndex, SHCOLUMNINFO* psci) =0;
+	virtual HRESULT __stdcall GetItemData(LPCSHCOLUMNID pscid, LPCSHCOLUMNDATA pscd, VARIANT* pvarData) =0;
 };
 
 
@@ -36,19 +36,19 @@ public:
 	}
 	
 	
-	HRESULT __stdcall QueryInterface(REFIID riid, void **ppv) override;
+	HRESULT __stdcall QueryInterface(REFIID riid, void **ppv);
 
-	ULONG __stdcall AddRef() override ;
+	ULONG __stdcall AddRef();
 
-	ULONG __stdcall Release() override ;
+	ULONG __stdcall Release();
 
 		// IColumnProvider methods
 	// Initialisation will set the folder for which the extension show columns
-	HRESULT __stdcall Initialize(LPCSHCOLUMNINIT psci) override;
+	HRESULT __stdcall Initialize(LPCSHCOLUMNINIT psci);
 	// Sets which columns the extension provides.
-	HRESULT __stdcall GetColumnInfo(DWORD dwIndex, SHCOLUMNINFO* psci) override;
+	HRESULT __stdcall GetColumnInfo(DWORD dwIndex, SHCOLUMNINFO* psci);
 	// Provides column data on demand.
-	HRESULT __stdcall GetItemData(LPCSHCOLUMNID pscid, LPCSHCOLUMNDATA pscd, /*out*/ VARIANT* pvarData) override;
+	HRESULT __stdcall GetItemData(LPCSHCOLUMNID pscid, LPCSHCOLUMNDATA pscd, /*out*/ VARIANT* pvarData);
 private:
 	LONG refCount;
 };

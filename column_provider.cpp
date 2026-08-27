@@ -1,4 +1,5 @@
 #include "column_provider.h"
+#include "description_handler.h"
 #include "dbg.h"
 
 HRESULT __stdcall ColumnProviderComClass::QueryInterface(REFIID riid, void **ppv) {
@@ -20,7 +21,7 @@ HRESULT __stdcall ColumnProviderComClass::QueryInterface(REFIID riid, void **ppv
 			AddRef();
 			return NOERROR;
 		}
-		*ppv = nullptr;
+		*ppv = NULL;
 		return E_NOINTERFACE;
 }
 
@@ -59,11 +60,32 @@ HRESULT __stdcall ColumnProviderComClass::GetColumnInfo(DWORD dwIndex, SHCOLUMNI
 };
 // Provides column data on demand.
 HRESULT __stdcall ColumnProviderComClass::GetItemData(LPCSHCOLUMNID pscid, LPCSHCOLUMNDATA pscd, /*out*/ VARIANT* pvarData){
-	VariantInit(pvarData);
-	BSTR b = SysAllocString(L"Sample text");
-	if (!b) return E_OUTOFMEMORY;	// allocation failed
+	TCHAR	 szFileName[MAX_PATH];
+	TCHAR	 szFilePath[MAX_PATH];
+	std::basic_string<TCHAR> comment;
+	std::basic_string<TCHAR> commentWithNewLines;
+	std::basic_string<TCHAR> commentPropData;
+	CDescriptionHandler description;
 
-	pvarData->vt = VT_BSTR;
-	pvarData->bstrVal = b;
-	return S_OK;
+	if ( pscid->pid != PIDSI_COMMENTS ) return S_FALSE;
+
+	GetFileNameAndPath(pscd->wszFile, szFileName, szFilePath, false);
+	description.LoadPath(szFilePath);
+	if ( description.IsCommented(szFileName) ){
+		VariantInit(pvarData);
+		description.ReadComment(szFileName, comment);
+		description.Demultilinefy(comment, commentWithNewLines, commentPropData,
+									CErrorsAndSettings::getInstance().getSettings().MultiLineStyle);
+		// Multiline is only partially supported by column provider, so we better get rid of it all together.
+		description.Multilinefy(commentWithNewLines, comment, L"", NONE);
+		BSTR b = SysAllocString(comment.c_str());
+
+		if (!b) return E_OUTOFMEMORY;	// allocation failed
+
+		pvarData->vt = VT_BSTR;
+		pvarData->bstrVal = b;
+		return S_OK;
+	} else {
+		return S_FALSE;
+	}
 };

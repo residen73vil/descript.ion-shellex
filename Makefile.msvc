@@ -67,7 +67,8 @@ OBJS = \
 	context_menu.obj \
 	description_file_rw.obj \
 	dll_main.obj \
-	file_io_wrapper.obj
+	file_io_wrapper.obj \
+	column_provider.obj
 
 # Resource object file
 RES_OBJ = resource.res

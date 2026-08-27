@@ -27,7 +27,7 @@ Firstly load the environment using
 or
 
 	msvc_path\VC\vcvarsall.bat" amd64
-Then you cann run:
+Then run:
 
 	nmake /f Makefile.msvc ARCH=x86 BUILD=release
 or
@@ -48,21 +48,20 @@ also some extra dll may be required for debug build like MSVCRTD.DLL and MSVCP60
 ### Testing
 Some tests may be found in  :file_folder:*tests* folder.
 
-# Draft version 3 is ready!
+# Draft version 4 is ready!
 
-Everything more or less works.
+Almost fully functional on xp and 2000, except for settings and installation. Needs additional IPropertyStore for columns on >Vista
 
 ## Goals for now are:
 
 1. Add more tests, and make them more automatic.
-2. Try and compile in MS Visual c++ for 64 bit.
-3. Back port to mingw.
+2. Back port to mingw.
 3. Refactor code.
 4. Make it run on win 98, win 95 if possible.
 
 ## Milestones are:
 
-1. Add column with comments in the explorer.
+1. Add column with comments in the explorer.(done, but deprecated in >Vista so IPropertyStore is needed)
 2. Settings and registration in registry.
 2. Add error messages.
 3. Multi language support
