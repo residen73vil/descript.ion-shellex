@@ -6,6 +6,7 @@
 #include "context_menu.h"
 #include "property_sheet.h"
 #include "column_provider.h"
+#include "prop_store_provider.h"
 #include "dbg.h"
 #include "compiler_compatability.h"
 HINSTANCE g_dll_hInstance;
@@ -61,6 +62,14 @@ public:
 		}
 		if ( riid == IID_IColumnProvider){
 			ColumnProviderComClass *pClass = new ColumnProviderComClass();
+			return pClass->QueryInterface(riid, ppv);
+		}
+		if ( riid == IID_IPropertyStore){
+			PropStoreProviderComClass*pClass = new PropStoreProviderComClass();
+			return pClass->QueryInterface(riid, ppv);
+		}
+		if ( riid == IID_IInitializeWithFile){
+			PropStoreProviderComClass*pClass = new PropStoreProviderComClass();
 			return pClass->QueryInterface(riid, ppv);
 		}
 		return E_NOINTERFACE;
