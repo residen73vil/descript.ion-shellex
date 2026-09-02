@@ -258,4 +258,106 @@ namespace Reg {
 		return result == ERROR_SUCCESS;
 	}
 
+	bool DeleteValue(
+		HKEY root,
+		const std::wstring& subKey,
+		const std::wstring& valueName
+	) {
+		HKEY key = NULL;
+
+		LONG result = RegOpenKeyExW(
+			root,
+			subKey.c_str(),
+			0,
+			KEY_SET_VALUE,
+			&key
+		);
+
+		if (result != ERROR_SUCCESS) {
+			return false;
+		}
+
+		result = RegDeleteValueW(
+			key,
+			valueName.c_str()
+		);
+
+		RegCloseKey(key);
+
+		return result == ERROR_SUCCESS;
+	}
+
+	bool DeleteKey(  // works recursively
+		HKEY root,
+		const std::wstring& subKey
+	) {
+		HKEY key = NULL;
+
+		LONG result = RegOpenKeyExW(
+			root,
+			subKey.c_str(),
+			0,
+			KEY_ENUMERATE_SUB_KEYS | KEY_QUERY_VALUE,
+			&key
+		);
+
+		if (result == ERROR_FILE_NOT_FOUND) {
+			// Already deleted or never existed.
+			return true;
+		}
+
+		if (result != ERROR_SUCCESS) {
+			return false;
+		}
+
+		wchar_t childName[256];
+		DWORD childNameLength;
+
+		// Always enumerate index 0 because deleting a child shifts
+		// the remaining children down.
+		for (;;) {
+			childNameLength = ARRAYSIZE(childName);
+
+			result = RegEnumKeyExW(
+				key,
+				0,
+				childName,
+				&childNameLength,
+				NULL,
+				NULL,
+				NULL,
+				NULL
+			);
+
+			if (result == ERROR_NO_MORE_ITEMS) {
+				break;
+			}
+
+			if (result != ERROR_SUCCESS) {
+				RegCloseKey(key);
+				return false;
+			}
+
+			std::wstring childPath = subKey;
+			childPath += L'\\';
+			childPath.append(childName, childNameLength);
+
+			if (!DeleteKey(root, childPath)) {
+				RegCloseKey(key);
+				return false;
+			}
+		}
+
+		RegCloseKey(key);
+
+		// At this point, the key should be empty, so RegDeleteKeyW
+		// can delete it.
+		result = RegDeleteKeyW(
+			root,
+			subKey.c_str()
+		);
+
+		return result == ERROR_SUCCESS ||
+				result == ERROR_FILE_NOT_FOUND;
+	}
 }

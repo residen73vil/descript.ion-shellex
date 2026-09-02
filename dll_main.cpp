@@ -8,8 +8,11 @@
 #include "column_provider.h"
 #include "dbg.h"
 #include "compiler_compatability.h"
+#include "reg_helper.h"
 HINSTANCE g_dll_hInstance;
 UINT g_cActiveComponents = 0; //counts additional noncom components of the dll that are in use
+wchar_t appName[] = L"descript.ion-shellex";
+
 //TODO: Check for memory leakage!!!
 //TODO: Com works wrong, fix it
 
@@ -116,6 +119,45 @@ BOOL WINAPI DllMain(HINSTANCE hInstance, DWORD fdwReason, LPVOID lpvReserved) {
 extern "C" __declspec(dllexport) HRESULT DllRegisterServer() {
 	// This function should register the COM class
 	// You may use Windows Registry functions to add CLSID and interface entries here
+	wchar_t guid[40];
+	wchar_t dll_path[MAX_PATH];
+	std::wstring reg_path = L"";
+
+	if ( StringFromGUID2(CLSID_ContextMenuClass, guid, 40) == 0 )
+		return E_FAIL;
+	DWORD length = GetModuleFileNameW(
+				g_dll_hInstance,
+				dll_path,
+				ARRAYSIZE(dll_path)
+			);
+	if (length == 0)
+		return E_FAIL;
+
+	// Register com object
+	reg_path = std::wstring(L"CLSID\\") + guid;
+	if (!Reg::WriteString(HKEY_CLASSES_ROOT, reg_path, L"", appName))
+		return E_FAIL;
+	reg_path = std::wstring(L"CLSID\\") + guid + L"\\InProcServer32";
+	if (!Reg::WriteString(HKEY_CLASSES_ROOT, reg_path, L"", dll_path))
+		return E_FAIL;
+	reg_path = std::wstring(L"CLSID\\") + guid + L"\\InProcServer32";
+	if (!Reg::WriteString(HKEY_CLASSES_ROOT, reg_path, L"ThreadingModel", L"Apartment"))
+		return E_FAIL;
+
+	// Register property sheet handler
+	reg_path = std::wstring(L"*\\shellex\\PropertySheetHandlers\\descript.ion-shellex");
+	if (!Reg::WriteString(HKEY_CLASSES_ROOT, reg_path, L"", guid))
+		return E_FAIL;
+	reg_path = std::wstring(L"Directory\\shellex\\PropertySheetHandlers\\descript.ion-shellex");
+	if (!Reg::WriteString(HKEY_CLASSES_ROOT, reg_path, L"", guid))
+		return E_FAIL;
+	// Register column handler ( Pre vista only)
+	reg_path = std::wstring(L"*\\shellex\\ColumnHandlers\\descript.ion-shellex");
+	if (!Reg::WriteString(HKEY_CLASSES_ROOT, reg_path, L"", guid))
+		return E_FAIL;
+	reg_path = std::wstring(L"Directory\\shellex\\ColumnHandlers\\descript.ion-shellex");
+	if (!Reg::WriteString(HKEY_CLASSES_ROOT, reg_path, L"", guid))
+		return E_FAIL;
 	return S_OK;
 }
 
@@ -123,6 +165,32 @@ extern "C" __declspec(dllexport) HRESULT DllRegisterServer() {
 extern "C" __declspec(dllexport) HRESULT DllUnregisterServer() {
 	// This function should unregister the COM class
 	// Clean up registry entries for CLSID and interface here
+	wchar_t guid[40];
+	std::wstring reg_path = L"";
+	if ( StringFromGUID2(CLSID_ContextMenuClass, guid, 40) == 0 )
+		return E_FAIL;
+	// Deleting com class
+	reg_path = std::wstring(L"CLSID\\") + guid;
+	if (!Reg::DeleteKey(HKEY_CLASSES_ROOT, reg_path))
+		return E_FAIL;
+	// Deleting property handler
+	reg_path = std::wstring(L"*\\shellex\\PropertySheetHandlers\\descript.ion-shellex");
+	if (!Reg::DeleteKey(HKEY_CLASSES_ROOT, reg_path))
+		return E_FAIL;
+	reg_path = std::wstring(L"Directory\\shellex\\PropertySheetHandlers\\descript.ion-shellex");
+	if (!Reg::DeleteKey(HKEY_CLASSES_ROOT, reg_path))
+		return E_FAIL;
+	// Deleting column handler
+	reg_path = std::wstring(L"*\\shellex\\ColumnHandlers\\descript.ion-shellex");
+	if (!Reg::DeleteKey(HKEY_CLASSES_ROOT, reg_path))
+		return E_FAIL;
+	reg_path = std::wstring(L"Directory\\shellex\\ColumnHandlers\\descript.ion-shellex");
+	if (!Reg::DeleteKey(HKEY_CLASSES_ROOT, reg_path))
+		return E_FAIL;
+	// Deleting application settings
+	reg_path = std::wstring(L"SOFTWARE\\ResE\\descript.ion-shellex");
+	if (!Reg::DeleteKey(HKEY_CURRENT_USER, reg_path))
+		return E_FAIL;
 	return S_OK;
 }
 

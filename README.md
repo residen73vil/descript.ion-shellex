@@ -1,6 +1,35 @@
 # descript.ion-shellex
+This is a windows explorer extension that adds ability to read and edit comments in descript.ion format similar to Total Commander, Double Commander, Far Manager, etc.
+It adds corresponding tab in file's properties, and on pre Vista Windows NT there also exists a column with the comment, which unfortunately is not really feasible after changes vista introduced.
 
-## Building, installing and testing
+## Installing
+
+### By hand
+Move descript.ion-shellex.dll into a convenient folder and run as administrator:
+
+    regsvr32 descript.ion-shellex.dll
+
+### Really by hand:
+Move descript.ion-shellex.dll into a convenient folder and add following keys to registry:
+
+Register class:
+
+    HKEY_CLASSES_ROOT\CLSID\{5629ff98-e953-466d-8480-3dd3c554ab09} = descript.ion-shellex.dll
+    HKEY_CLASSES_ROOT\CLSID\{5629ff98-e953-466d-8480-3dd3c554ab09}\InProcServer32 = %file_path%\descript.ion-shellex.dll
+    HKEY_CLASSES_ROOT\CLSID\{5629ff98-e953-466d-8480-3dd3c554ab09}\InProcServer32\ThreadingModel = Apartment
+
+Add property sheet handler:
+
+    HKEY_CLASSES_ROOT\*\shellex\PropertySheetHandlers\descript.ion-shellex = {5629ff98-e953-466d-8480-3dd3c554ab09}
+    HKEY_CLASSES_ROOT\Directory\shellex\PropertySheetHandlers\descript.ion-shellex = {5629ff98-e953-466d-8480-3dd3c554ab09}
+    
+Add column handler:
+    HKEY_CLASSES_ROOT\*\shellex\ColumnHandlers\descript.ion-shellex = {5629ff98-e953-466d-8480-3dd3c554ab09}
+    HKEY_CLASSES_ROOT\Directory\shellex\ColumnHandlers\descript.ion-shellex = {5629ff98-e953-466d-8480-3dd3c554ab09}
+
+Settings are saved in HKEY_CURRENT_USER\SOFTWARE\ResE\descript.ion-shellex
+
+## Building and testing
 
 ### Debug build (mingw)
 	make clean
@@ -50,7 +79,7 @@ Some tests may be found in  :file_folder:*tests* folder.
 
 # Draft version 4 is ready!
 
-Almost fully functional on xp and 2000, except for settings and installation. Needs additional IPropertyStore for columns on >Vista
+Almost fully functional on xp and 2000, except for settings and installation. Needs additional IPropertyStore for columns on >Vista (well IProperyStore apparently only works with certain file extensions, and cant work for any file hence doesn't fit the job, no columns for Vista+)
 
 ## Goals for now are:
 

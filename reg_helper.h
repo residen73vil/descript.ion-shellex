@@ -51,5 +51,15 @@ namespace Reg {
 		const std::wstring& valueName
 	);
 
+	bool DeleteValue(
+		HKEY root,
+		const std::wstring& subKey,
+		const std::wstring& valueName
+	);
+
+	bool DeleteKey(
+		HKEY root,
+		const std::wstring& subKey
+	);
 }
 #endif
