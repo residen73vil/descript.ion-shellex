@@ -68,7 +68,8 @@ OBJS = \
 	description_file_rw.obj \
 	dll_main.obj \
 	file_io_wrapper.obj \
-	column_provider.obj
+	column_provider.obj \
+	reg_helper.obj
 
 # Resource object file
 RES_OBJ = resource.res

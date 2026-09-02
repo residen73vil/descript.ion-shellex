@@ -171,6 +171,7 @@ RINT CALLBACK PropPageDlgProc ( HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 					PropSheetAttachments *pAttachments = (PropSheetAttachments*)GetWindowLongPtr(hwnd, GWLP_USERDATA);
 					if (pAttachments->are_settings_to_apply_present){
 						CErrorsAndSettings::getInstance().setSettings(pAttachments->settings);
+						CErrorsAndSettings::getInstance().saveSettingsToReg();
 						pAttachments->are_settings_to_apply_present = false;
 					}
 					if (pAttachments->are_changes_to_apply_present){

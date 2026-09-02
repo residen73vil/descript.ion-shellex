@@ -1,5 +1,6 @@
 #include "errors_and_settings.h"
-
+#include "reg_helper.h"
+#include <string>
 
 void CErrorsAndSettings::ShowError(const wchar_t* kind, const wchar_t* msg){
 	MessageBoxW(NULL, msg, kind, MB_OK | MB_ICONINFORMATION);
@@ -61,6 +62,7 @@ const wchar_t* CErrorsAndSettings::ERROR_IO_DEVICE_MSG = L"I/O device error.\n";
 CErrorsAndSettings CErrorsAndSettings::instance;
 
 
+const wchar_t* reg_sittings_key = L"Software\\ResE\\descript.ion-shellex";
 
 
 void CErrorsAndSettings::setSettings(const CSettings &_settings){
@@ -74,4 +76,38 @@ CSettings CErrorsAndSettings::getSettings(){
 	eRet = settings;
 	LeaveCriticalSection(&cs);
 	return eRet;
+}
+
+bool CErrorsAndSettings::saveSettingsToReg(){
+	bool result = true;
+	EnterCriticalSection(&cs);
+	if (!Reg::WriteDword(HKEY_CURRENT_USER, reg_sittings_key, L"cp", settings.cp))
+		result = false;
+	if (!Reg::WriteDword(HKEY_CURRENT_USER, reg_sittings_key, L"bom", settings.bom))
+		result = false;
+	if (!Reg::WriteDword(HKEY_CURRENT_USER, reg_sittings_key, L"MultiLineStyle",
+														 settings.MultiLineStyle))
+		result = false;
+	LeaveCriticalSection(&cs);
+	return result;
+}
+
+bool CErrorsAndSettings::loadSettingsFromReg(){
+	bool result = true;
+	DWORD temp = 0;
+	EnterCriticalSection(&cs);
+	if (Reg::ReadDword(HKEY_CURRENT_USER, reg_sittings_key, L"cp", temp))
+		settings.cp = temp;
+	else
+		result = false;
+	if (Reg::ReadDword(HKEY_CURRENT_USER, reg_sittings_key, L"bom", temp))
+		settings.bom = temp;
+	else
+		result = false;
+	if (Reg::ReadDword(HKEY_CURRENT_USER, reg_sittings_key, L"MultiLineStyle", temp))
+		settings.MultiLineStyle = (MultiLineStyle) temp;
+	else
+		result = false;
+	LeaveCriticalSection(&cs);
+	return result;
 }

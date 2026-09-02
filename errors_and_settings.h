@@ -37,7 +37,7 @@ class CErrorsAndSettings
 							m_last_io_error(0)
 	{
 		InitializeCriticalSection(&cs);
-		//TODO: Should initialize settings from registry.
+		loadSettingsFromReg();
 	}
 	// Delete copy constructor and assignment operator
 	CErrorsAndSettings(const CErrorsAndSettings&);
@@ -50,6 +50,8 @@ public:
 	static CErrorsAndSettings& getInstance();
 	// Settings
 	void setSettings(const CSettings &settings);
+	bool saveSettingsToReg();
+	bool loadSettingsFromReg();
 	CSettings getSettings();
 
 	UINT new_file_default_codepage;
