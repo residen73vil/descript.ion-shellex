@@ -74,10 +74,16 @@ BEGIN
 			BS_AUTORADIOBUTTON | WS_TABSTOP,
 			20, 125, 200, 12
 
-	CONTROL "Clean on save (none existing files and repeats)", IDC_CHK_CLEAN, "BUTTON",
-			BS_AUTOCHECKBOX | WS_TABSTOP,
-			10, 145, 200, 12
-	LTEXT   "Current file status:", IDC_STATIC_STATUS, 10, 165, 120, 12
+// TODO: Make this function in the future
+//	CONTROL "Clean on save (none existing files and repeats)", IDC_CHK_CLEAN, "BUTTON",
+//			BS_AUTOCHECKBOX | WS_TABSTOP,
+//			10, 145, 200, 12
+//	LTEXT   "Current file status:", IDC_STATIC_STATUS, 10, 165, 120, 12
+	LTEXT   "About:\n   descript.ion support for Windows Explorer", IDC_STATIC_ABOUT, 10, 165, 160, 22
+	CONTROL	 "https://github.com/residen73vil/descript.ion-shellex", IDC_LINK,
+				"STATIC",
+				SS_LEFT | SS_NOTIFY | WS_TABSTOP,
+				15, 185, 170, 12
 END
 
 
@@ -101,4 +107,30 @@ BEGIN
 	IDS_PROJNAME			"descript.ion-shellex"
 END
 
+VS_VERSION_INFO VERSIONINFO
+FILEVERSION	 1, 2, 3, 0
+PRODUCTVERSION  1, 2, 3, 0
+FILETYPE		VFT_DLL
 
+BEGIN
+	BLOCK "StringFileInfo"
+	BEGIN
+		BLOCK "040904B0"
+		BEGIN
+			VALUE "FileDescription",	"descript.ion file support for Explorer\0"
+			VALUE "InternalName",		"descript.ion-shellex.dll\0"
+			VALUE "LegalCopyright",		"Copyright (C) 2026 ResE\0"
+			VALUE "OriginalFilename",	"descript.ion-shellex.dll\0"
+			VALUE "ProductName",		"descript.ion-shellex\0"
+			VALUE "ProductVersion",		"0.1a\0"
+			VALUE "Comments",			"mailto:residen73vil@gmail.com\r\n"
+										"https://github.com/residen73vil\r\n"
+										"In case you want to remove this app from explorer run \'regsrv32 /u descript.ion-shellex.dll\'\0"
+		END
+	END
+
+	BLOCK "VarFileInfo"
+	BEGIN
+		VALUE "Translation", 0x0409, 1200
+	END
+END

@@ -194,6 +194,155 @@ extern "C" __declspec(dllexport) HRESULT DllUnregisterServer() {
 	return S_OK;
 }
 
+// runs a command as admin
+bool RunElevatedHelper(const std::wstring helperPath, const std::wstring params)
+{
+	SHELLEXECUTEINFOW sei = {};
+	sei.cbSize = sizeof(sei);
+	sei.fMask = SEE_MASK_NOCLOSEPROCESS;
+	sei.lpVerb = L"runas";
+	sei.lpFile = helperPath.c_str();
+	sei.lpParameters = params.c_str();
+	sei.nShow = SW_SHOWNORMAL;
+
+	if (!ShellExecuteExW(&sei)) {
+		return false; // GetLastError() == ERROR_CANCELLED if user declined
+	}
+
+	WaitForSingleObject(sei.hProcess, INFINITE);
+
+	DWORD exitCode = 1;
+	GetExitCodeProcess(sei.hProcess, &exitCode);
+	CloseHandle(sei.hProcess);
+
+	return exitCode == 0;
+}
+
+// uninstalls the program, can be run with rundll32 file.dll,uninstall
+extern "C" __declspec(dllexport) void CALLBACK uninstall(
+	HWND hwnd,
+	HINSTANCE hinst,
+	LPSTR lpszCmdLine,
+	int nCmdShow
+){
+	wchar_t dll_path[MAX_PATH];
+
+	DWORD length = GetModuleFileNameW(
+				g_dll_hInstance,
+				dll_path,
+				ARRAYSIZE(dll_path)
+			);
+	if (RunElevatedHelper(std::wstring(L"rundll32.exe"),
+							std::wstring(dll_path) + L",uninstallAsAdmin")){
+
+		MessageBoxW(NULL, L"Successfully uninstalled" , L"Uninstallation", MB_OK);
+	} else {
+		std::wstring msg = L"File: ";
+		msg += dll_path;
+		msg += L" won't be deleted, delete it by hand!";
+		MessageBoxW(NULL, msg.c_str() , L"Warning!", MB_OK | MB_ICONERROR);
+	}
+}
+
+extern "C" __declspec(dllexport) void CALLBACK uninstallAsAdmin(
+	HWND hwnd,
+	HINSTANCE hinst,
+	LPSTR lpszCmdLine,
+	int nCmdShow
+){
+	wchar_t guid[40];
+	wchar_t dll_path[MAX_PATH];
+	std::wstring reg_path = L"";
+
+	if ( StringFromGUID2(CLSID_ContextMenuClass, guid, 40) == 0 )
+		return;
+	DWORD length = GetModuleFileNameW(
+				g_dll_hInstance,
+				dll_path,
+				ARRAYSIZE(dll_path)
+			);
+	DllUnregisterServer();
+	// Deleting uninstaller item from Programs And Components
+	reg_path = std::wstring(L"SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\") + guid;
+	if (!Reg::DeleteKey(HKEY_LOCAL_MACHINE, reg_path))
+		return;
+	// Schedules this dll to be deleted, should be run as administrator to works.
+	MoveFileExW(
+			dll_path,
+			NULL,
+			MOVEFILE_DELAY_UNTIL_REBOOT
+		);
+}
+
+
+extern "C" __declspec(dllexport) void CALLBACK install(
+	HWND hwnd,
+	HINSTANCE hinst,
+	LPSTR lpszCmdLine,
+	int nCmdShow
+){
+	wchar_t dll_path[MAX_PATH];
+
+	DWORD length = GetModuleFileNameW(
+				g_dll_hInstance,
+				dll_path,
+				ARRAYSIZE(dll_path)
+			);
+	if (RunElevatedHelper(std::wstring(L"rundll32.exe"),
+							std::wstring(dll_path) + L",installAsAdmin")){
+
+		MessageBoxW(NULL, L"Successfully installed." , L"Installation", MB_OK);
+	} else {
+		std::wstring msg = L"Installation failed! \n File: ";
+		msg += dll_path;
+		msg += L" won't be deleted, delete it by hand!";
+		MessageBoxW(NULL, msg.c_str() , L"Warning!", MB_OK | MB_ICONERROR);
+	}
+}
+
+extern "C" __declspec(dllexport) void CALLBACK installAsAdmin(
+	HWND hwnd,
+	HINSTANCE hinst,
+	LPSTR lpszCmdLine,
+	int nCmdShow
+){
+	wchar_t guid[40];
+	wchar_t dll_path[MAX_PATH];
+
+	if ( StringFromGUID2(CLSID_ContextMenuClass, guid, 40) == 0 )
+		return;
+	DWORD length = GetModuleFileNameW(
+				g_dll_hInstance,
+				dll_path,
+				ARRAYSIZE(dll_path)
+			);
+	if (length == 0)
+		return;
+	std::wstring reg_path = std::wstring(L"SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\") + guid;
+	// Registering com object and handlers.
+	DllRegisterServer();
+	// Registering uninstaller.
+	if (!Reg::WriteString(HKEY_LOCAL_MACHINE, reg_path, L"DisplayName", appName))
+		return;
+	if (!Reg::WriteString(HKEY_LOCAL_MACHINE, reg_path, L"DisplayIcon", dll_path))
+		return;
+	if (!Reg::WriteString(HKEY_LOCAL_MACHINE, reg_path, L"DisplayVersion", L"0.1a"))
+		return;
+	if (!Reg::WriteString(HKEY_LOCAL_MACHINE, reg_path, L"Publisher", L"ResE"))
+		return;
+	if (!Reg::WriteDword(HKEY_LOCAL_MACHINE, reg_path, L"EstimatedSize", 100))
+		return;
+	if (!Reg::WriteDword(HKEY_LOCAL_MACHINE, reg_path, L"NoModify", 1))
+		return;
+	if (!Reg::WriteDword(HKEY_LOCAL_MACHINE, reg_path, L"NoRepair", 1))
+		return;
+	std::wstring UninstallStr = L"rundll32.exe \"";
+	UninstallStr += dll_path;
+	UninstallStr += L"\",uninstall";
+	if (!Reg::WriteString(HKEY_LOCAL_MACHINE, reg_path, L"UninstallString", UninstallStr))
+		return;
+}
+
 // Create instance function
 extern "C" __declspec(dllexport) HRESULT CreateContextMenuComClass(IContextMenuComClass** ppv) {
 	*ppv = new ContextMenuComClass();
@@ -230,34 +379,5 @@ extern "C" __declspec(dllexport) STDAPI DllCanUnloadNow() {
 HRESULT LookForAnotherImplementedClass(REFIID riid, LPVOID FAR*ppv) {
 	DEBUG_LOG_RIID( L"LookForAnotherImplementedClass", riid)
 	static ShellPropSheetExtComClass *shellextInit = NULL;
-	/*if ( riid == IID_IContextMenu ){
-		ContextMenuComClass *pClass = new ContextMenuComClass();
-		return pClass->QueryInterface(riid, ppv);
-	}
-	if (riid == IID_IShellExtInit){
-		ShellExtInitComClass *pClass = NULL;
-		if (shellextInit != NULL)
-			pClass = (ShellExtInitComClass*) shellextInit;
-		else{
-			pClass = (ShellExtInitComClass*) new ShellPropSheetExtComClass();
-			pClass->AddRef();
-			shellextInit = (ShellPropSheetExtComClass*) pClass;
-		}
-		//__asm { int 3 };
-		return pClass->QueryInterface(riid, ppv);
-	}
-	if ( riid == IID_IShellPropSheetExt ){
-		ShellPropSheetExtComClass *pClass = NULL;
-		if (shellextInit != NULL)
-			pClass = shellextInit;
-		else{
-			pClass = new ShellPropSheetExtComClass();
-			pClass->AddRef();
-			shellextInit = pClass;
-		}
-		//__asm { int 3 };
-		return pClass->QueryInterface(riid, ppv);
-	}
-	*ppv = NULL;*/
 	return E_NOINTERFACE;
 }

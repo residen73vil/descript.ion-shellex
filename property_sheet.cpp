@@ -156,7 +156,7 @@ RINT CALLBACK PropPageDlgProc ( HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 		{
 		case WM_INITDIALOG:
 			//SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR)lParam); //save PROPSHEETPAGE pointer
-			bRet = OnInitDialog( hwnd, lParam ); 
+			bRet = OnInitDialog( hwnd, lParam );
 		break;
 		case WM_NOTIFY:
 			{
@@ -301,7 +301,34 @@ RINT CALLBACK TabControlDlgProc ( HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lP
 				pAttachments->are_changes_to_apply_present = true;
 
 			}
+			if (LOWORD(wParam) == IDC_LINK &&
+						HIWORD(wParam) == STN_CLICKED){
+				ShellExecute(
+					hwnd,
+					L"open",
+					L"https://github.com/residen73vil/descript.ion-shellex",
+					NULL,
+					NULL,
+					SW_SHOWNORMAL
+				);
+			}
 		break;
+		case WM_CTLCOLORSTATIC:
+			{ // Decorating link in settings tab
+			HWND hControl = (HWND)lParam;
+
+			if (GetDlgCtrlID(hControl) == IDC_LINK)
+			{
+				HDC hdc = (HDC)wParam;
+
+				SetTextColor(hdc, RGB(0, 0, 255));  // Blue
+				SetBkMode(hdc, TRANSPARENT);
+
+				return (INT_PTR)GetStockObject(NULL_BRUSH);
+			}
+
+			break;
+			}
 		}
 
 	return bRet;
@@ -479,6 +506,7 @@ BOOL CALLBACK CPEnumProc(LPTSTR lpCodePageString)
 	g_codePages.push_back(item);
 	return TRUE;	// continue enumeration
 }
+//TODO: UTF16 items are not added!!! Need to add them by hand!
 
 void PopulateCodePageList()
 {

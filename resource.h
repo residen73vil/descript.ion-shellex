@@ -23,4 +23,6 @@
 #define IDC_RADIO_NL_TC					237
 #define IDC_RADIO_NL_NONE				238
 #define IDC_CHK_CLEAN					239
-#define IDC_STATIC_STATUS				240
+//#define IDC_STATIC_STATUS				240
+#define IDC_STATIC_ABOUT				240
+#define IDC_LINK						241
